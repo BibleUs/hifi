@@ -11,10 +11,19 @@
 
 #include "OsvrHmdDisplayPlugin.h"
 
+#ifdef HAVE_OSVR
+#include <osvr/ClientKit/ClientKit.h>
+#endif
+
 const QString OsvrHmdDisplayPlugin::NAME("OSVR HMD");
 
 bool OsvrHmdDisplayPlugin::isSupported() const {
+#ifdef HAVE_OSVR
+    osvr::clientkit::ClientContext context("HighFidelity.Interface.osvrHMD");
     return true;  // TODO
+#else
+    return false;
+#endif
 }
 
 void OsvrHmdDisplayPlugin::customizeContext() {
