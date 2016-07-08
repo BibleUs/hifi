@@ -1,6 +1,6 @@
 #
 #  CMakeLists.txt
-#  plugins/osvrHMD
+#  plugins/hifiOSVR
 #
 #  Created by David Rowe on 5 Jul 2016.
 #  Copyright 2016 High Fidelity, Inc.
@@ -14,7 +14,7 @@ if (WIN32)
     # We're using static GLEW, so define GLEW_STATIC
     add_definitions(-DGLEW_STATIC)
 
-    set(TARGET_NAME osvrHMD)
+    set(TARGET_NAME hifiOSVR)
     setup_hifi_plugin(OpenGL)
     link_hifi_libraries(shared gl plugins display-plugins controllers)
     

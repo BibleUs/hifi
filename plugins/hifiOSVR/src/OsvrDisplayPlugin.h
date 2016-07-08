@@ -1,6 +1,6 @@
 //
-//  OsvrHmdDisplayPlugin.h
-//  plugins/osvrHMD/src
+//  OsvrDisplayPlugin.h
+//  plugins/hifiOSVR/src
 //
 //  Created by David Rowe on 5 Jul 2016.
 //  Copyright 2016 High Fidelity, Inc.
@@ -9,14 +9,14 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
-#ifndef hifi_OsvrHmdDisplayPlugin_h
-#define hifi_OsvrHmdDisplayPlugin_h
+#ifndef hifi_OsvrDisplayPlugin_h
+#define hifi_OsvrDisplayPlugin_h
 
 #include <QtGlobal>
 
 #include <display-plugins/hmd/HmdDisplayPlugin.h>
 
-class OsvrHmdDisplayPlugin : public HmdDisplayPlugin {
+class OsvrDisplayPlugin : public HmdDisplayPlugin {
     using Parent = HmdDisplayPlugin;
 public:
     bool isSupported() const override;

@@ -1,6 +1,6 @@
 //
-//  OsvrHmdProvider.cpp
-//  plugins/osvrHMD/src
+//  OsvrProvider.cpp
+//  plugins/hifiOSVR/src
 //
 //  Created by David Rowe on 5 Jul 2016.
 //  Copyright 2016 High Fidelity, Inc.
@@ -17,15 +17,15 @@
 
 #include <plugins/RuntimePlugin.h>
 
-#include "OsvrHmdDisplayPlugin.h"
-#include "OsvrHmdControllerManager.h"
+#include "OsvrDisplayPlugin.h"
+#include "OsvrControllerManager.h"
 
 class OpenVrProvider : public QObject, public DisplayProvider, InputProvider
 {
     Q_OBJECT
-    Q_PLUGIN_METADATA(IID DisplayProvider_iid FILE "OsvrHmd.json")
+    Q_PLUGIN_METADATA(IID DisplayProvider_iid FILE "plugin.json")
     Q_INTERFACES(DisplayProvider)
-    Q_PLUGIN_METADATA(IID InputProvider_iid FILE "OsvrHmd.json")
+    Q_PLUGIN_METADATA(IID InputProvider_iid FILE "plugin.json")
     Q_INTERFACES(InputProvider)
 
 public:
@@ -35,7 +35,7 @@ public:
     virtual DisplayPluginList getDisplayPlugins() override {
         static std::once_flag once;
         std::call_once(once, [&] {
-            DisplayPluginPointer plugin(new OsvrHmdDisplayPlugin());
+            DisplayPluginPointer plugin(new OsvrDisplayPlugin());
             if (plugin->isSupported()) {
                 _displayPlugins.push_back(plugin);
             }
@@ -46,7 +46,7 @@ public:
     virtual InputPluginList getInputPlugins() override {
         static std::once_flag once;
         std::call_once(once, [&] {
-            InputPluginPointer plugin(new OsvrHmdControllerManager());
+            InputPluginPointer plugin(new OsvrControllerManager());
             if (plugin->isSupported()) {
                 _inputPlugins.push_back(plugin);
             }
@@ -59,4 +59,4 @@ private:
     InputPluginList _inputPlugins;
 };
 
-#include "OsvrHmdProvider.moc"
+#include "OsvrProvider.moc"

@@ -1,6 +1,6 @@
 //
-//  OsvrHmdControllerManager.h
-//  plugins/osvrHMD/src
+//  OsvrControllerManager.h
+//  plugins/hifiOSVR/src
 //
 //  Created by David Rowe on 5 Jul 2016.
 //  Copyright 2016 High Fidelity, Inc.
@@ -9,15 +9,15 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
-#ifndef hifi_OsvrHmdControllerManager_h
-#define hifi_OsvrHmdControllerManager_h
+#ifndef hifi_OsvrControllerManager_h
+#define hifi_OsvrControllerManager_h
 
 #include <QObject>
 
 #include <controllers/InputDevice.h>
 #include <plugins/InputPlugin.h>
 
-class OsvrHmdControllerManager : public InputPlugin {
+class OsvrControllerManager : public InputPlugin {
     Q_OBJECT
 public:
     bool isSupported() const override;
