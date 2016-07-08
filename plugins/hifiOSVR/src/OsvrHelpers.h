@@ -13,5 +13,6 @@
 #define hifi_OsvrHelpers_h
 
 bool isOsvrAvailable();
+bool isOsvrDisplayAvailable();
 
 #endif

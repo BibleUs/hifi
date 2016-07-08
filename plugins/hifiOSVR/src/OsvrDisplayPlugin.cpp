@@ -15,7 +15,7 @@
 const QString OsvrDisplayPlugin::NAME("OSVR HMD");
 
 bool OsvrDisplayPlugin::isSupported() const {
-    return isOsvrAvailable();
+    return isOsvrDisplayAvailable();
 }
 
 void OsvrDisplayPlugin::customizeContext() {

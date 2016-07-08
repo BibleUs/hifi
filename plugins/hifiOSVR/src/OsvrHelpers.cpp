@@ -11,31 +11,60 @@
 
 #include "OsvrHelpers.h"
 
-#ifdef HAVE_OSVR
+#include <mutex>
+
 #include <osvr/ClientKit/ClientKit.h>
-#endif
+#include <osvr/ClientKit/Display.h>
+
+#include <SharedUtil.h>
 
 static osvr::clientkit::ClientContext* context{ nullptr };
-static bool isOsvrAvailableChecked{ false };
-static bool isOsvrAvailableResult{ false };
-
-static const char* OSVR_APPLICATION_IDENTIFIER = "com.highfidelity.Interface";
-// It is OK for the identifier to be identical on multiple clients connected to the same OSVR server.
+static osvr::clientkit::DisplayConfig* display{ nullptr };
 
 bool isOsvrAvailable() {
-#ifdef HAVE_OSVR
-    if (!isOsvrAvailableChecked) {
+    static std::once_flag once;
+    static bool result{ false };
+    std::call_once(once, [&] {
+        static const char* OSVR_APPLICATION_IDENTIFIER = "com.highfidelity.Interface";
+        // It is OK for the identifier to be identical on multiple clients connected to the same OSVR server.
         context = new osvr::clientkit::ClientContext(OSVR_APPLICATION_IDENTIFIER);
-
-        isOsvrAvailableResult = context->checkStatus();
-
-        if (!isOsvrAvailableResult) {
+        result = context->checkStatus();
+        if (!result) {
             delete context;
+            context = nullptr;
         }
-    }
 
-    return isOsvrAvailableResult;
-#else
-    return false;
-#endif
+        qDebug() << "OSVR available:" << result;
+    });
+
+    return result;
+}
+
+bool isOsvrDisplayAvailable() {
+    static std::once_flag once;
+    static bool result{ false };
+    std::call_once(once, [&] {
+        if (isOsvrAvailable()) {
+            display = new osvr::clientkit::DisplayConfig(*context);
+            result = display->valid();
+
+            if (result) {
+                static const quint64 OSVR_DISPLAY_STARTUP_TIMEOUT = 1000000;  // 1 sec
+                quint64 timeout = usecTimestampNow() + OSVR_DISPLAY_STARTUP_TIMEOUT;
+                while (!display->checkStartup() && usecTimestampNow() < timeout) {
+                    context->update();
+                }
+                result = display->checkStartup();
+            }
+
+            if (!result) {
+                delete display;
+                display = nullptr;
+            }
+
+            qDebug() << "OSVR display available:" << result;
+        }
+    });
+
+    return result;
 }
