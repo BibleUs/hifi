@@ -14,13 +14,13 @@
 const QString OsvrControllerManager::NAME = "OSVR";
 
 bool OsvrControllerManager::isSupported() const {
-    return true;
+    return false;  // OSVR controller support not implemented.
 }
 
 void OsvrControllerManager::pluginFocusOutEvent() {
-    // TODO
+    // OSVR controller support not implemented.
 }
 
 void OsvrControllerManager::pluginUpdate(float deltaTime, const controller::InputCalibrationData& inputCalibrationData) {
-    // TODO
+    // OSVR controller support not implemented.
 }
