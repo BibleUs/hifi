@@ -12,7 +12,13 @@
 #ifndef hifi_OsvrHelpers_h
 #define hifi_OsvrHelpers_h
 
+#include <osvr/ClientKit/ClientKit.h>
+#include <osvr/ClientKit/Display.h>
+
 bool isOsvrAvailable();
 bool isOsvrDisplayAvailable();
+
+osvr::clientkit::ClientContext* getOsvrContext();
+osvr::clientkit::DisplayConfig* getOsvrDisplay();
 
 #endif

@@ -60,6 +60,18 @@ void OsvrDisplayPlugin::submitOverlayTexture(const gpu::TexturePointer& overlayT
 
 bool OsvrDisplayPlugin::internalActivate() {
     // TODO
+
+    // Initialize HMD session
+    _osvrDisplay = getOsvrDisplay();
+    if (!_osvrDisplay) {
+        return false;
+    }
+
+    // Get HMD parameters
+    auto dimensions = _osvrDisplay->getDisplayDimensions(0);
+    _renderTargetSize.x = dimensions.width;
+    _renderTargetSize.y = dimensions.height;
+
     return Parent::internalActivate();
 }
 

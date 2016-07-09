@@ -14,6 +14,9 @@
 
 #include <QtGlobal>
 
+#include <osvr/ClientKit/ClientKit.h>
+#include <osvr/ClientKit/Display.h>
+
 #include <display-plugins/hmd/HmdDisplayPlugin.h>
 
 class OsvrDisplayPlugin : public HmdDisplayPlugin {
@@ -48,6 +51,8 @@ protected:
 
 private:
     static const QString NAME;
+
+    osvr::clientkit::DisplayConfig* _osvrDisplay{ nullptr };
 };
 
 #endif

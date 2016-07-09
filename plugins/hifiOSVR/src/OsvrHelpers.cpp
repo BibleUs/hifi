@@ -13,9 +13,6 @@
 
 #include <mutex>
 
-#include <osvr/ClientKit/ClientKit.h>
-#include <osvr/ClientKit/Display.h>
-
 #include <SharedUtil.h>
 
 static osvr::clientkit::ClientContext* context{ nullptr };
@@ -67,4 +64,12 @@ bool isOsvrDisplayAvailable() {
     });
 
     return result;
+}
+
+osvr::clientkit::ClientContext* getOsvrContext() {
+    return context;
+}
+
+osvr::clientkit::DisplayConfig* getOsvrDisplay() {
+    return display;
 }
