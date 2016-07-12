@@ -22,8 +22,9 @@ hifi_library_search_hints("osvr")
 
 find_path(OSVR_INCLUDE_DIRS osvr/ClientKit/ClientKit.h PATH_SUFFIXES include include/osvr include/osvr/ClientKit HINTS ${OSVR_SEARCH_DIRS})
 
-find_library(OSVR_LIBRARY NAMES osvrClientKit PATH_SUFFIXES lib HINTS ${OSVR_SEARCH_DIRS})
-set(OSVR_LIBRARIES ${OSVR_LIBRARY})
+find_library(OSVR_CLIENTKIT_LIBRARY NAMES osvrClientKit PATH_SUFFIXES lib HINTS ${OSVR_SEARCH_DIRS})
+find_library(OSVR_RENDERMANAGER_LIBRARY NAMES osvrRenderManager PATH_SUFFIXES lib HINTS ${OSVR_SEARCH_DIRS})
+set(OSVR_LIBRARIES ${OSVR_CLIENTKIT_LIBRARY} ${OSVR_RENDERMANAGER_LIBRARY})
 
 find_path(OSVR_DLL_PATH osvrClientKit.dll PATH_SUFFIXES bin HINTS ${OSVR_SEARCH_DIRS})
 

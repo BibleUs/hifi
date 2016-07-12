@@ -61,16 +61,28 @@ void OsvrDisplayPlugin::submitOverlayTexture(const gpu::TexturePointer& overlayT
 bool OsvrDisplayPlugin::internalActivate() {
     // TODO
 
-    // Initialize HMD session
-    _osvrDisplay = getOsvrDisplay();
-    if (!_osvrDisplay) {
+    // Initialize OSVR rendering
+    _osvrContext = getOsvrContext();
+    _osvrRender = osvr::renderkit::createRenderManager(_osvrContext->get(), "OpenGL");
+    if ((_osvrRender == nullptr) || (!_osvrRender->doingOkay())) {
+        qDebug() << "OSVR: Could not create RenderManager";  // TODO: Delete?
         return false;
     }
 
-    // Get HMD parameters
-    auto dimensions = _osvrDisplay->getDisplayDimensions(0);
-    _renderTargetSize.x = dimensions.width;
-    _renderTargetSize.y = dimensions.height;
+    osvr::renderkit::RenderManager::OpenResults result = _osvrRender->OpenDisplay();
+    if (result.status == osvr::renderkit::RenderManager::OpenStatus::FAILURE) {
+        qDebug() << "OSVR: Could not open display";  // TODO: Delete?
+        delete _osvrRender;
+        return false;
+    }
+    // Set up render parameters
+    std::vector<osvr::renderkit::RenderInfo> renderInfo;
+    _osvrContext->update();
+    renderInfo = _osvrRender->GetRenderInfo();
+    _renderTargetSize = uvec2(
+        renderInfo[0].viewport.width + renderInfo[1].viewport.width,
+        std::max(renderInfo[0].viewport.height, renderInfo[1].viewport.height)
+        );
 
     return Parent::internalActivate();
 }

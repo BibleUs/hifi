@@ -15,7 +15,7 @@
 #include <QtGlobal>
 
 #include <osvr/ClientKit/ClientKit.h>
-#include <osvr/ClientKit/Display.h>
+#include <osvr/RenderKit/RenderManager.h>
 
 #include <display-plugins/hmd/HmdDisplayPlugin.h>
 
@@ -52,7 +52,8 @@ protected:
 private:
     static const QString NAME;
 
-    osvr::clientkit::DisplayConfig* _osvrDisplay{ nullptr };
+    osvr::clientkit::ClientContext* _osvrContext{ nullptr };
+    osvr::renderkit::RenderManager* _osvrRender{ nullptr };
 };
 
 #endif

@@ -8,9 +8,9 @@ David Rowe, 6 Jul 2016
     \interface\externals\osvr folder. This readme.txt should be there as well.
 
     The folders needed are:
-    - bin: *.dll
+    - bin: *.dll, LICENSE, NOTICE, osvr-ver.txt
     - include: all, including subfolders
-    - lib: *.lib
+    - lib: *.lib, excluding subfolders
 
    You may optionally choose to copy the folders to a location outside the repository. If so, set the ENV variable 
    'HIFI_LIB_DIR' to a directory containing a subfolder "osvr" that contains the folders mentioned.
