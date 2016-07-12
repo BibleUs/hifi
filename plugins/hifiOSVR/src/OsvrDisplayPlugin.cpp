@@ -75,6 +75,11 @@ bool OsvrDisplayPlugin::internalActivate() {
         delete _osvrRender;
         return false;
     }
+    if (result.library.OpenGL == nullptr) {
+        qDebug() << "OSVR: Graphics library not configured as OpenGL";
+        delete _osvrRender;
+        return false;
+    }
     // Set up render parameters
     std::vector<osvr::renderkit::RenderInfo> renderInfo;
     _osvrContext->update();
