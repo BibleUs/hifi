@@ -37,9 +37,6 @@ public:
     bool beginFrameRender(uint32_t frameIndex) override;
     void cycleDebugOutput() override;
 
-    void submitSceneTexture(uint32_t frameIndex, const gpu::TexturePointer& sceneTexture) override;
-    void submitOverlayTexture(const gpu::TexturePointer& overlayTexture) override;
-
 protected:
     bool internalActivate() override;
     void internalDeactivate() override;
@@ -54,6 +51,12 @@ private:
 
     osvr::clientkit::ClientContext* _osvrContext{ nullptr };
     osvr::renderkit::RenderManager* _osvrRender{ nullptr };
+
+    std::vector<osvr::renderkit::RenderInfo> _renderInfo;
+
+    osvr::renderkit::RenderBuffer _colorBuffer;
+    std::vector<osvr::renderkit::RenderBuffer> _colorBuffers;
+    std::vector<osvr::renderkit::OSVR_ViewportDescription> _textureViewports;
 };
 
 #endif
