@@ -52,6 +52,7 @@ private:
     osvr::clientkit::ClientContext* _osvrContext{ nullptr };
     osvr::renderkit::RenderManager* _osvrRender{ nullptr };
 
+    osvr::renderkit::RenderManager::RenderParams _renderParams;
     std::vector<osvr::renderkit::RenderInfo> _renderInfo;
 
     osvr::renderkit::RenderBuffer _colorBuffer;

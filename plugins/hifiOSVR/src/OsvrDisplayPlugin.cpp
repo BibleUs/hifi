@@ -11,6 +11,7 @@
 
 #include "OsvrDisplayPlugin.h"
 
+#include <ViewFrustum.h>
 #include <display-plugins/CompositorHelper.h>
 
 #include "OsvrHelpers.h"
@@ -83,10 +84,12 @@ bool OsvrDisplayPlugin::internalActivate() {
         return false;
     }
 
-    // Set up render parameters
+    // Set up Interface render parameters.
     std::vector<osvr::renderkit::RenderInfo> renderInfo;
     _osvrContext->update();
-    renderInfo = _osvrRender->GetRenderInfo();
+    _renderParams.nearClipDistanceMeters = DEFAULT_NEAR_CLIP;
+    _renderParams.farClipDistanceMeters = DEFAULT_FAR_CLIP;
+    renderInfo = _osvrRender->GetRenderInfo(_renderParams);
     if (renderInfo.size() != 2) {
         qDebug() << "OSVR: Display does not have 2 eyes";
         delete _osvrRender;
@@ -99,6 +102,15 @@ bool OsvrDisplayPlugin::internalActivate() {
         std::max(renderInfo[0].viewport.height, renderInfo[1].viewport.height)
         );
 
+    GLdouble projection[16];
+    osvr::renderkit::OSVR_Projection_to_OpenGL(projection, renderInfo[0].projection);
+    _eyeProjections[0] = toGlm(projection);
+    osvr::renderkit::OSVR_Projection_to_OpenGL(projection, renderInfo[1].projection);
+    _eyeProjections[1] = toGlm(projection);
+
+    _cullingProjection = _eyeProjections[0];  // TODO
+
+    // Set up OSVR render parameters.
     osvr::renderkit::OSVR_ViewportDescription textureViewportLeft{ 0.0f, 0.0f, 0.5f, 1.0f };
     _textureViewports.push_back(textureViewportLeft);
     osvr::renderkit::OSVR_ViewportDescription textureViewportRight{ 0.5f, 0.0f, 0.5f, 1.0f };
@@ -143,12 +155,10 @@ bool OsvrDisplayPlugin::beginFrameRender(uint32_t frameIndex) {
     _currentRenderFrameInfo = FrameInfo();
     //_currentRenderFrameInfo.sensorSampleTime = ?  // TODO: Needed?
     //_currentRenderFrameInfo.predictedDisplayTime = ?  // TODO: Needed?
-
-    // TODO: Use the head pose rather than the left eye's pose.
-    GLdouble modelView[16];
-    osvr::renderkit::OSVR_PoseState_to_OpenGL(modelView, _renderInfo[0].pose);
-    _currentRenderFrameInfo.renderPose = static_cast<glm::mat4>(modelView[0]);
-    _currentRenderFrameInfo.presentPose = _currentRenderFrameInfo.renderPose;  // TODO: Needed? C.f. updatePresentPose()?
+    glm::vec3 translation = (toGlm(_renderInfo[0].pose.translation) + toGlm(_renderInfo[1].pose.translation)) / -2.0f;
+    glm::quat rotation = glm::inverse(toGlm(_renderInfo[0].pose.rotation));  // Both eye views have the same rotation.
+    _currentRenderFrameInfo.renderPose = glm::translate(glm::mat4(), translation) * glm::mat4_cast(rotation);
+    _currentRenderFrameInfo.presentPose = _currentRenderFrameInfo.renderPose;
 
     withRenderThreadLock([&] {
         _uiModelTransform = DependencyManager::get<CompositorHelper>()->getModelTransform();
@@ -169,11 +179,7 @@ void OsvrDisplayPlugin::hmdPresent() {
 
     const bool FLIP_IN_Y = true;
 
-    if (!_osvrRender->PresentRenderBuffers(_colorBuffers,
-        _renderInfo,
-        osvr::renderkit::RenderManager::RenderParams(), // TODO: Update if pass parameters into GetRenderInfo() at start of frame.
-        _textureViewports,
-        FLIP_IN_Y)) {
+    if (!_osvrRender->PresentRenderBuffers(_colorBuffers, _renderInfo, _renderParams, _textureViewports, FLIP_IN_Y)) {
         // TODO: What to do?
     }
 };
