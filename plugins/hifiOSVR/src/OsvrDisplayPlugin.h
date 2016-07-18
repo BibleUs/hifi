@@ -58,6 +58,8 @@ private:
     osvr::renderkit::RenderBuffer _colorBuffer;
     std::vector<osvr::renderkit::RenderBuffer> _colorBuffers;
     std::vector<osvr::renderkit::OSVR_ViewportDescription> _textureViewports;
+
+    float _targetFrameRate{ 60.0f };
 };
 
 #endif

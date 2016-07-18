@@ -42,7 +42,8 @@ bool OsvrDisplayPlugin::isHmdMounted() const {
 }
 
 float OsvrDisplayPlugin::getTargetFrameRate() const {
-    return 60.0f;  // TODO
+    // HMD display refresh rate.
+    return _targetFrameRate;
 }
 
 void OsvrDisplayPlugin::resetSensors() {
@@ -82,6 +83,17 @@ bool OsvrDisplayPlugin::internalActivate() {
         delete _osvrRender;
         // TODO: Delete _osvrContext?
         return false;
+    }
+
+    // Get HMD's target frame rate 
+    osvr::renderkit::RenderTimingInfo timingInfo;
+    if (_osvrRender->GetTimingInfo(0, timingInfo)) {
+        const float MICROSECONDS_PER_SECOND = 1000000.0f;
+        _targetFrameRate = roundf(MICROSECONDS_PER_SECOND / (float)timingInfo.hardwareDisplayInterval.microseconds);
+    } else {
+        qWarning() << "OSVR: Could not obtain HMD's frame rate";
+        const float DEFAULT_TARGET_FRAME_RATE = 60.0f;
+        _targetFrameRate = DEFAULT_TARGET_FRAME_RATE;
     }
 
     // Set up Interface render parameters.
