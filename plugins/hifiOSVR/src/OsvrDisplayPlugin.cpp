@@ -136,7 +136,11 @@ bool OsvrDisplayPlugin::internalActivate() {
     _eyeOffsets[0] = glm::translate(mat4(), glm::vec3(-_ipd / 2.0f, 0.0f, 0.0f));
     _eyeOffsets[1] = glm::translate(mat4(), glm::vec3(_ipd / 2.0f, 0.0f, 0.0f));
 
-    _cullingProjection = _eyeProjections[0];  // TODO
+    _cullingProjection = _eyeProjections[0];  // Eyes have identical projections.
+    if (_eyeProjections[0] != _eyeProjections[1]) {
+        // Warn if not the case in the future.
+        qWarning() << "OSVR: Improper culling projection because eye projections are not identical";
+    }
 
     // Set up OSVR render parameters.
     osvr::renderkit::OSVR_ViewportDescription textureViewportLeft{ 0.0f, 0.0f, 0.5f, 1.0f };
