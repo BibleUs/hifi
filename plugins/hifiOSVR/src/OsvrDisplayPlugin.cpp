@@ -85,15 +85,27 @@ bool OsvrDisplayPlugin::internalActivate() {
         return false;
     }
 
-    // Get HMD's target frame rate 
+    // Get HMD's target frame rate.
     osvr::renderkit::RenderTimingInfo timingInfo;
     if (_osvrRender->GetTimingInfo(0, timingInfo)) {
         const float MICROSECONDS_PER_SECOND = 1000000.0f;
         _targetFrameRate = roundf(MICROSECONDS_PER_SECOND / (float)timingInfo.hardwareDisplayInterval.microseconds);
+        qDebug() << "OSVR: HMD frame rate =" << _targetFrameRate;
     } else {
-        qWarning() << "OSVR: Could not obtain HMD's frame rate";
         const float DEFAULT_TARGET_FRAME_RATE = 60.0f;
         _targetFrameRate = DEFAULT_TARGET_FRAME_RATE;
+        qWarning() << "OSVR: Could not obtain HMD's frame rate; using" << _targetFrameRate;
+    }
+
+    // Get HMD's IPD.
+    osvr::clientkit::DisplayConfig* display = getOsvrDisplay();
+    osvr::clientkit::Eye eyes[2] = { display->getEye(0, 0), display->getEye(0, 1) };
+    OSVR_Pose3 eyePoses[2];
+    if (eyes[0].getPose(eyePoses[0]) && eyes[1].getPose(eyePoses[1])) {
+        _ipd = glm::distance(toGlm(eyePoses[0].translation), toGlm(eyePoses[1].translation));
+        qDebug() << "OSVR: IPD =" << _ipd;
+    } else {
+        qWarning() << "OSVR: Could not obtain HMD's IPD; using " << _ipd;
     }
 
     // Set up Interface render parameters.
@@ -101,6 +113,7 @@ bool OsvrDisplayPlugin::internalActivate() {
     _osvrContext->update();
     _renderParams.nearClipDistanceMeters = DEFAULT_NEAR_CLIP;
     _renderParams.farClipDistanceMeters = DEFAULT_FAR_CLIP;
+    _renderParams.IPDMeters = _ipd;
     renderInfo = _osvrRender->GetRenderInfo(_renderParams);
     if (renderInfo.size() != 2) {
         qDebug() << "OSVR: Display does not have 2 eyes";
@@ -119,6 +132,9 @@ bool OsvrDisplayPlugin::internalActivate() {
     _eyeProjections[0] = toGlm(projection);
     osvr::renderkit::OSVR_Projection_to_OpenGL(projection, renderInfo[1].projection);
     _eyeProjections[1] = toGlm(projection);
+
+    _eyeOffsets[0] = glm::translate(mat4(), glm::vec3(-_ipd / 2.0f, 0.0f, 0.0f));
+    _eyeOffsets[1] = glm::translate(mat4(), glm::vec3(_ipd / 2.0f, 0.0f, 0.0f));
 
     _cullingProjection = _eyeProjections[0];  // TODO
 
