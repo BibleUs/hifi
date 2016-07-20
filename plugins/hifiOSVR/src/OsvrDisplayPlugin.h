@@ -60,6 +60,8 @@ private:
     std::vector<osvr::renderkit::OSVR_ViewportDescription> _textureViewports;
 
     float _targetFrameRate{ 60.0f };
+
+    glm::quat _sensorZeroRotation{ glm::quat() };
 };
 
 #endif

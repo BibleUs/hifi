@@ -49,7 +49,10 @@ float OsvrDisplayPlugin::getTargetFrameRate() const {
 void OsvrDisplayPlugin::resetSensors() {
     // Reset HMD tracking.
 
-    // TODO
+    if (_osvrContext && _osvrRender) {
+        _osvrContext->update();  // Update tracker state.
+        _sensorZeroRotation = glm::inverse(toGlm(_osvrRender->GetRenderInfo()[0].pose.rotation));
+    }
 }
 
 void OsvrDisplayPlugin::cycleDebugOutput() {
@@ -183,7 +186,7 @@ bool OsvrDisplayPlugin::beginFrameRender(uint32_t frameIndex) {
     _currentRenderFrameInfo = FrameInfo();
     //_currentRenderFrameInfo.sensorSampleTime = ?  // TODO: Needed?
     //_currentRenderFrameInfo.predictedDisplayTime = ?  // TODO: Needed?
-    glm::quat rotation = toGlm(_renderInfo[0].pose.rotation);  // Both eye views have the same rotation.
+    glm::quat rotation = toGlm(_renderInfo[0].pose.rotation) * _sensorZeroRotation;  // Both eye views have the same rotation.
     glm::vec3 translation = 
         rotation * ((toGlm(_renderInfo[0].pose.translation) + toGlm(_renderInfo[1].pose.translation)) / -2.0f);
     _currentRenderFrameInfo.renderPose = glm::translate(glm::mat4(), translation) * glm::mat4_cast(rotation);
