@@ -127,12 +127,8 @@ bool OsvrDisplayPlugin::internalActivate() {
         std::max(renderInfo[0].viewport.height, renderInfo[1].viewport.height)
         );
 
-    GLdouble projection[16];
-    osvr::renderkit::OSVR_Projection_to_OpenGL(projection, renderInfo[0].projection);
-    _eyeProjections[0] = toGlm(projection);
-    osvr::renderkit::OSVR_Projection_to_OpenGL(projection, renderInfo[1].projection);
-    _eyeProjections[1] = toGlm(projection);
-
+    _eyeProjections[0] = toGlm(renderInfo[0].projection);
+    _eyeProjections[1] = toGlm(renderInfo[1].projection);
     _eyeOffsets[0] = glm::translate(mat4(), glm::vec3(-_ipd / 2.0f, 0.0f, 0.0f));
     _eyeOffsets[1] = glm::translate(mat4(), glm::vec3(_ipd / 2.0f, 0.0f, 0.0f));
 
@@ -187,8 +183,9 @@ bool OsvrDisplayPlugin::beginFrameRender(uint32_t frameIndex) {
     _currentRenderFrameInfo = FrameInfo();
     //_currentRenderFrameInfo.sensorSampleTime = ?  // TODO: Needed?
     //_currentRenderFrameInfo.predictedDisplayTime = ?  // TODO: Needed?
-    glm::vec3 translation = (toGlm(_renderInfo[0].pose.translation) + toGlm(_renderInfo[1].pose.translation)) / -2.0f;
-    glm::quat rotation = glm::inverse(toGlm(_renderInfo[0].pose.rotation));  // Both eye views have the same rotation.
+    glm::quat rotation = toGlm(_renderInfo[0].pose.rotation);  // Both eye views have the same rotation.
+    glm::vec3 translation = 
+        rotation * ((toGlm(_renderInfo[0].pose.translation) + toGlm(_renderInfo[1].pose.translation)) / -2.0f);
     _currentRenderFrameInfo.renderPose = glm::translate(glm::mat4(), translation) * glm::mat4_cast(rotation);
     _currentRenderFrameInfo.presentPose = _currentRenderFrameInfo.renderPose;
 
