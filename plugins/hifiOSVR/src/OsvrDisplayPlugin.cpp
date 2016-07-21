@@ -5,6 +5,8 @@
 //  Created by David Rowe on 5 Jul 2016.
 //  Copyright 2016 High Fidelity, Inc.
 //
+//  Assumes OSVR RenderManager is configured with asynchronous timewarp enabled.
+//
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
@@ -64,6 +66,8 @@ void OsvrDisplayPlugin::cycleDebugOutput() {
 
 bool OsvrDisplayPlugin::internalActivate() {
     // Set up HMD rendering.
+
+    qDebug() << "OSVR: Activate";
 
     // Initialize OSVR rendering
     _osvrContext = getOsvrContext();
@@ -184,8 +188,6 @@ bool OsvrDisplayPlugin::beginFrameRender(uint32_t frameIndex) {
     _renderInfo = _osvrRender->GetRenderInfo();  // TODO: Pass info into this call, e.g. IPD?
 
     _currentRenderFrameInfo = FrameInfo();
-    //_currentRenderFrameInfo.sensorSampleTime = ?  // TODO: Needed?
-    //_currentRenderFrameInfo.predictedDisplayTime = ?  // TODO: Needed?
     glm::quat rotation = toGlm(_renderInfo[0].pose.rotation) * _sensorZeroRotation;  // Both eye views have the same rotation.
     glm::vec3 translation = 
         rotation * ((toGlm(_renderInfo[0].pose.translation) + toGlm(_renderInfo[1].pose.translation)) / -2.0f);
@@ -200,14 +202,13 @@ bool OsvrDisplayPlugin::beginFrameRender(uint32_t frameIndex) {
     return Parent::beginFrameRender(frameIndex);
 }
 
-void OsvrDisplayPlugin::updatePresentPose() {
-    // Update pose and projection prior to present.
-
-    // TODO
-}
-
 void OsvrDisplayPlugin::hmdPresent() {
     // Submit frame to HMD.
+
+    if (_renderedFrame == _presentedFrame) {
+        return;  // Only submit new frame so that OSVR RenderManager's asynchronous timewarp can do its thing.
+    }
+    _presentedFrame = _renderedFrame;
 
     const bool FLIP_IN_Y = true;
 
@@ -215,6 +216,14 @@ void OsvrDisplayPlugin::hmdPresent() {
         // TODO: What to do?
     }
 };
+
+void OsvrDisplayPlugin::submitSceneTexture(uint32_t frameIndex, const gpu::TexturePointer& sceneTexture) {
+    // Identify newly rendered frame for hmdPresent().
+
+    _renderedFrame = frameIndex;
+
+    Parent::submitSceneTexture(frameIndex, sceneTexture);
+}
 
 void OsvrDisplayPlugin::postPreview() {
     // Tidying after HMD scene mirrored to desktop.
@@ -224,12 +233,17 @@ void OsvrDisplayPlugin::postPreview() {
 
 void OsvrDisplayPlugin::uncustomizeContext() {
     // Revert OpenGL context to desktop's.
+    _colorBuffers.clear();
     delete _colorBuffer.OpenGL;
+
     Parent::uncustomizeContext();
 }
 
 void OsvrDisplayPlugin::internalDeactivate() {
     // Tear down HMD rendering.
+
+    qDebug() << "OSVR: Deactivate";
+
     Parent::internalDeactivate();
     delete _osvrRender;
 }

@@ -35,12 +35,13 @@ public:
     void resetSensors() override;
 
     bool beginFrameRender(uint32_t frameIndex) override;
+    void submitSceneTexture(uint32_t frameIndex, const gpu::TexturePointer& sceneTexture) override;
+
     void cycleDebugOutput() override;
 
 protected:
     bool internalActivate() override;
     void internalDeactivate() override;
-    void updatePresentPose() override;
 
     void hmdPresent() override;
     bool isHmdMounted() const override;
@@ -60,6 +61,9 @@ private:
     std::vector<osvr::renderkit::OSVR_ViewportDescription> _textureViewports;
 
     float _targetFrameRate{ 60.0f };
+
+    uint32_t _renderedFrame{ 0 };
+    uint32_t _presentedFrame{ 0 };
 
     glm::quat _sensorZeroRotation{ glm::quat() };
 };
