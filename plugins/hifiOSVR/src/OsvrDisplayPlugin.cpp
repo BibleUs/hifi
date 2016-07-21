@@ -186,7 +186,7 @@ bool OsvrDisplayPlugin::beginFrameRender(uint32_t frameIndex) {
     // Prepare to render frame.
 
     _osvrContext->update();  // Update tracker state.
-    _renderInfo = _osvrRender->GetRenderInfo();  // TODO: Pass info into this call, e.g. IPD?
+    _renderInfo = _osvrRender->GetRenderInfo(_renderParams);
 
     _currentRenderFrameInfo = FrameInfo();
     glm::quat rotation = toGlm(_renderInfo[0].pose.rotation) * _sensorZeroRotation;  // Both eye views have the same rotation.
@@ -213,7 +213,7 @@ void OsvrDisplayPlugin::hmdPresent() {
 
     const bool FLIP_IN_Y = true;
 
-    if (!_osvrRender->PresentRenderBuffers(_colorBuffers, _renderInfo, _renderParams, _textureViewports, FLIP_IN_Y)) {
+    if (!_osvrRender->PresentRenderBuffers(_colorBuffers, _presentInfo, _renderParams, _textureViewports, FLIP_IN_Y)) {
         // TODO: What to do?
     }
 };
@@ -222,6 +222,7 @@ void OsvrDisplayPlugin::submitSceneTexture(uint32_t frameIndex, const gpu::Textu
     // Identify newly rendered frame for hmdPresent().
 
     _renderedFrame = frameIndex;
+    _presentInfo = _renderInfo;
 
     Parent::submitSceneTexture(frameIndex, sceneTexture);
 }

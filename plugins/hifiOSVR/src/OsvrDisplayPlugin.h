@@ -55,6 +55,7 @@ private:
 
     osvr::renderkit::RenderManager::RenderParams _renderParams;
     std::vector<osvr::renderkit::RenderInfo> _renderInfo;
+    std::vector<osvr::renderkit::RenderInfo> _presentInfo;
 
     osvr::renderkit::RenderBuffer _colorBuffer;
     std::vector<osvr::renderkit::RenderBuffer> _colorBuffers;
