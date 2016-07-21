@@ -45,7 +45,6 @@ protected:
 
     void hmdPresent() override;
     bool isHmdMounted() const override;
-    void postPreview() override;
 
 private:
     static const QString NAME;
@@ -60,6 +59,8 @@ private:
     osvr::renderkit::RenderBuffer _colorBuffer;
     std::vector<osvr::renderkit::RenderBuffer> _colorBuffers;
     std::vector<osvr::renderkit::OSVR_ViewportDescription> _textureViewports;
+
+    bool _isActivated{ false };
 
     float _targetFrameRate{ 60.0f };
 

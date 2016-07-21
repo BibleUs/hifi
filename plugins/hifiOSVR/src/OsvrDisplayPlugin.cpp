@@ -38,9 +38,8 @@ void OsvrDisplayPlugin::init() {
 bool OsvrDisplayPlugin::isHmdMounted() const {
     // Is the user wearing the HMD?
 
-    // TODO
-
-    return true;
+    // OSVR doesn't currently have any function reflecting this. Instead, just return whether the HMD plug-in is activated.
+    return _isActivated;
 }
 
 float OsvrDisplayPlugin::getTargetFrameRate() const {
@@ -60,10 +59,10 @@ void OsvrDisplayPlugin::resetSensors() {
 }
 
 void OsvrDisplayPlugin::cycleDebugOutput() {
+    // HMD-specific debug output.
+
+    // OSVR doesn't have any specific debug overlay or similar; just lock the current texture instead.
     _lockCurrentTexture = !_lockCurrentTexture;
-
-    // TODO
-
 }
 
 bool OsvrDisplayPlugin::internalActivate() {
@@ -84,12 +83,14 @@ bool OsvrDisplayPlugin::internalActivate() {
     if (result.status == osvr::renderkit::RenderManager::OpenStatus::FAILURE) {
         qDebug() << "OSVR: Could not open display";  // TODO: Delete?
         delete _osvrRender;
+        _osvrRender = nullptr;
         // TODO: Delete _osvrContext?
         return false;
     }
     if (result.library.OpenGL == nullptr) {
         qDebug() << "OSVR: Graphics library not configured as OpenGL";
         delete _osvrRender;
+        _osvrRender = nullptr;
         // TODO: Delete _osvrContext?
         return false;
     }
@@ -128,6 +129,7 @@ bool OsvrDisplayPlugin::internalActivate() {
     if (renderInfo.size() != 2) {
         qDebug() << "OSVR: Display does not have 2 eyes";
         delete _osvrRender;
+        _osvrRender = nullptr;
         // TODO: Delete _osvrContext?
         return false;
     }
@@ -154,8 +156,14 @@ bool OsvrDisplayPlugin::internalActivate() {
     osvr::renderkit::OSVR_ViewportDescription textureViewportRight{ 0.5f, 0.0f, 0.5f, 1.0f };
     _textureViewports.push_back(textureViewportRight);
 
-    return Parent::internalActivate();
-    // TODO: Delete _osvrContext if returnValue == false?
+    _isActivated = Parent::internalActivate();
+    if (!_isActivated) {
+        delete _osvrRender;
+        _osvrRender = nullptr;
+        // TODO: Delete _osvrContext?
+    }
+
+    return _isActivated;
 }
 
 void OsvrDisplayPlugin::customizeContext() {
@@ -232,16 +240,11 @@ void OsvrDisplayPlugin::submitSceneTexture(uint32_t frameIndex, const gpu::Textu
     Parent::submitSceneTexture(frameIndex, sceneTexture);
 }
 
-void OsvrDisplayPlugin::postPreview() {
-    // Tidying after HMD scene mirrored to desktop.
-
-    // TODO: Delete this method if not needed.
-}
-
 void OsvrDisplayPlugin::uncustomizeContext() {
     // Revert OpenGL context to desktop's.
     _colorBuffers.clear();
     delete _colorBuffer.OpenGL;
+    _colorBuffer.OpenGL = nullptr;
 
     Parent::uncustomizeContext();
 }
@@ -253,4 +256,7 @@ void OsvrDisplayPlugin::internalDeactivate() {
 
     Parent::internalDeactivate();
     delete _osvrRender;
+    _osvrRender = nullptr;
+
+    _isActivated = false;
 }
