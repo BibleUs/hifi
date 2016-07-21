@@ -99,9 +99,10 @@ bool OsvrDisplayPlugin::internalActivate() {
         _targetFrameRate = roundf(MICROSECONDS_PER_SECOND / (float)timingInfo.hardwareDisplayInterval.microseconds);
         qDebug() << "OSVR: HMD frame rate =" << _targetFrameRate;
     } else {
+        // This case happens if RenderManager has asynchronous timewarp enabled.
         const float DEFAULT_TARGET_FRAME_RATE = 60.0f;
         _targetFrameRate = DEFAULT_TARGET_FRAME_RATE;
-        qWarning() << "OSVR: Could not obtain HMD's frame rate; using" << _targetFrameRate;
+        qDebug() << "OSVR: Could not obtain HMD's frame rate; using" << _targetFrameRate;
     }
 
     // Get HMD's IPD.
