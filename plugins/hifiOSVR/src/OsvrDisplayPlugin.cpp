@@ -54,6 +54,8 @@ void OsvrDisplayPlugin::resetSensors() {
     if (_osvrContext && _osvrRender) {
         _osvrContext->update();  // Update tracker state.
         _sensorZeroRotation = glm::inverse(toGlm(_osvrRender->GetRenderInfo()[0].pose.rotation));
+        _sensorZeroTranslation = -0.5f *
+            (toGlm(_osvrRender->GetRenderInfo()[0].pose.translation) + toGlm(_osvrRender->GetRenderInfo()[1].pose.translation));
     }
 }
 
@@ -187,6 +189,9 @@ bool OsvrDisplayPlugin::beginFrameRender(uint32_t frameIndex) {
 
     _osvrContext->update();  // Update tracker state.
     _renderInfo = _osvrRender->GetRenderInfo(_renderParams);
+
+    _renderInfo[0].pose.translation = addGlm(_renderInfo[0].pose.translation, _sensorZeroTranslation);
+    _renderInfo[1].pose.translation = addGlm(_renderInfo[1].pose.translation, _sensorZeroTranslation);
 
     _currentRenderFrameInfo = FrameInfo();
     glm::quat rotation = toGlm(_renderInfo[0].pose.rotation) * _sensorZeroRotation;  // Both eye views have the same rotation.

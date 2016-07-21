@@ -46,4 +46,12 @@ inline glm::vec3 toGlm(const OSVR_Vec3 &vec) {
     return glm::vec3(osvrVec3GetX(&vec), osvrVec3GetY(&vec), osvrVec3GetZ(&vec));
 }
 
+inline OSVR_Vec3 addGlm(const OSVR_Vec3 &vec1, const glm::vec3 &vec2) {
+    OSVR_Vec3 result;
+    osvrVec3SetX(&result, osvrVec3GetX(&result) + vec2.x);
+    osvrVec3SetY(&result, osvrVec3GetX(&result) + vec2.y);
+    osvrVec3SetZ(&result, osvrVec3GetX(&result) + vec2.z);
+    return result;
+}
+
 #endif

@@ -67,6 +67,7 @@ private:
     uint32_t _presentedFrame{ 0 };
 
     glm::quat _sensorZeroRotation{ glm::quat() };
+    glm::vec3 _sensorZeroTranslation{ glm::vec3() };
 };
 
 #endif
