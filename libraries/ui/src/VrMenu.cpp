@@ -173,6 +173,11 @@ void VrMenu::addAction(QMenu* menu, QAction* action) {
         Q_RETURN_ARG(QQuickMenuItem*, returnedValue),
         Q_ARG(QString, action->text()));
 
+    if (!invokeResult) {
+        qDebug() << "Adding action " << action->text() << " failed, skipping...";
+        return;
+    }
+
     Q_ASSERT(invokeResult);
     Q_UNUSED(invokeResult); // FIXME - apparently we haven't upgraded the Qt on our unix Jenkins environments to 5.5.x
     QObject* result = reinterpret_cast<QObject*>(returnedValue); // returnedValue.value<QObject*>();
