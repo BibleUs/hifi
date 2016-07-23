@@ -126,6 +126,7 @@ bool OsvrDisplayPlugin::internalActivate() {
     _renderParams.farClipDistanceMeters = DEFAULT_FAR_CLIP;
     _renderParams.IPDMeters = _ipd;
     renderInfo = _osvrRender->GetRenderInfo(_renderParams);
+    fixRenderInfo(renderInfo);  // TODO: Is this correct when using an OSVR HDK?
     if (renderInfo.size() != 2) {
         qDebug() << "OSVR: Display does not have 2 eyes";
         delete _osvrRender;
@@ -197,6 +198,7 @@ bool OsvrDisplayPlugin::beginFrameRender(uint32_t frameIndex) {
 
     _osvrContext->update();  // Update tracker state.
     _renderInfo = _osvrRender->GetRenderInfo(_renderParams);
+    fixRenderInfo(_renderInfo);  // TODO: Is this correct when using an OSVR HDK?
 
     _renderInfo[0].pose.translation = addGlm(_renderInfo[0].pose.translation, _sensorZeroTranslation);
     _renderInfo[1].pose.translation = addGlm(_renderInfo[1].pose.translation, _sensorZeroTranslation);
@@ -204,7 +206,8 @@ bool OsvrDisplayPlugin::beginFrameRender(uint32_t frameIndex) {
     _currentRenderFrameInfo = FrameInfo();
     glm::quat rotation = toGlm(_renderInfo[0].pose.rotation) * _sensorZeroRotation;  // Both eye views have the same rotation.
     glm::vec3 translation = 
-        rotation * ((toGlm(_renderInfo[0].pose.translation) + toGlm(_renderInfo[1].pose.translation)) / -2.0f);
+        rotation * ((toGlm(_renderInfo[0].pose.translation) + toGlm(_renderInfo[1].pose.translation)) / 2.0f);
+
     _currentRenderFrameInfo.renderPose = glm::translate(glm::mat4(), translation) * glm::mat4_cast(rotation);
     _currentRenderFrameInfo.presentPose = _currentRenderFrameInfo.renderPose;
 

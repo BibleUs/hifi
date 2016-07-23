@@ -28,13 +28,22 @@ osvr::clientkit::ClientContext* getOsvrContext();
 osvr::clientkit::DisplayConfig* getOsvrDisplay();
 
 
+inline void fixRenderInfo(std::vector<osvr::renderkit::RenderInfo> &renderInfo) {
+    // Swap projection's top and bottom values so that the top value is +ve and the bottom value is -ve.
+    // Interface needs this in order to get the correct projection values.
+    // OSVR RenderManager also needs this for a much smoother time-warp correction.
+    // TODO: This may be a RenderManager bug; keep an eye out for fixes.
+    std::swap(renderInfo[0].projection.top, renderInfo[0].projection.bottom);
+    std::swap(renderInfo[1].projection.top, renderInfo[1].projection.bottom);
+}
+
 inline glm::mat4 toGlm(const osvr::renderkit::OSVR_ProjectionMatrix &projection) {
     GLdouble proj[16];
     OSVR_Projection_to_OpenGL(proj, projection);
     return glm::mat4(
-        proj[0], proj[1], proj[2], proj[3], 
-        -proj[4], -proj[5], -proj[6], -proj[7],
-        proj[8], proj[9], proj[10], proj[11], 
+        proj[0], proj[1], proj[2], proj[3],
+        proj[4], proj[5], proj[6], proj[7],
+        proj[8], proj[9], proj[10], proj[11],
         proj[12], proj[13], proj[14], proj[15]);
 }
 
@@ -43,14 +52,14 @@ inline glm::quat toGlm(const OSVR_Quaternion &quat) {
 }
 
 inline glm::vec3 toGlm(const OSVR_Vec3 &vec) {
-    return glm::vec3(osvrVec3GetX(&vec), osvrVec3GetY(&vec), osvrVec3GetZ(&vec));
+    return glm::vec3(-osvrVec3GetX(&vec), -osvrVec3GetY(&vec), -osvrVec3GetZ(&vec));
 }
 
 inline OSVR_Vec3 addGlm(const OSVR_Vec3 &vec1, const glm::vec3 &vec2) {
     OSVR_Vec3 result;
-    osvrVec3SetX(&result, osvrVec3GetX(&result) + vec2.x);
-    osvrVec3SetY(&result, osvrVec3GetX(&result) + vec2.y);
-    osvrVec3SetZ(&result, osvrVec3GetX(&result) + vec2.z);
+    osvrVec3SetX(&result, osvrVec3GetX(&vec1) + vec2.x);
+    osvrVec3SetY(&result, osvrVec3GetY(&vec1) + vec2.y);
+    osvrVec3SetZ(&result, osvrVec3GetZ(&vec1) + vec2.z);
     return result;
 }
 
