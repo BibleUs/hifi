@@ -26,6 +26,8 @@ if (NOT SERVER_ONLY)
   add_subdirectory(${DIR})
   set(DIR "hifiNeuron")
   add_subdirectory(${DIR})
+  set(DIR "hifiOSVR")
+  add_subdirectory(${DIR})
 endif()
 
 # server-side plugins
