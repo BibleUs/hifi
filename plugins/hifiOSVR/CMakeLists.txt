@@ -23,7 +23,7 @@ if (WIN32)
     add_dependency_external_projects(osvr)
     find_package(osvr REQUIRED)
 
-    #add_dependency_external_projects(boost)
+    add_dependency_external_projects(boost)
     find_package(boost REQUIRED)
 
     target_include_directories(${TARGET_NAME} PRIVATE ${OSVR_INCLUDE_DIRS})
