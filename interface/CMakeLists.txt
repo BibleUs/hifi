@@ -2,7 +2,7 @@ set(TARGET_NAME interface)
 project(${TARGET_NAME})
 
 # set a default root dir for each of our optional externals if it was not passed
-set(OPTIONAL_EXTERNALS "LeapMotion" "OSVR" "Boost")
+set(OPTIONAL_EXTERNALS "LeapMotion" "Boost")
 
 foreach(EXTERNAL ${OPTIONAL_EXTERNALS})
   string(TOUPPER ${EXTERNAL} ${EXTERNAL}_UPPERCASE)
@@ -126,6 +126,7 @@ if (WIN32)
   add_dependency_external_projects(sdl2)
   add_dependency_external_projects(OpenVR)
   add_dependency_external_projects(neuron)
+  add_dependency_external_projects(osvr)
 endif()
 
 # disable /OPT:REF and /OPT:ICF for the Debug builds
