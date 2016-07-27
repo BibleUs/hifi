@@ -74,32 +74,32 @@ bool OsvrDisplayPlugin::internalActivate() {
     _osvrContext = getOsvrContext();
     _osvrRender = osvr::renderkit::createRenderManager(_osvrContext->get(), "OpenGL");
     if ((_osvrRender == nullptr) || (!_osvrRender->doingOkay())) {
-        qDebug() << "OSVR: Could not create RenderManager";  // TODO: Delete?
-        // TODO: Delete _osvrContext?
+        qWarning() << "OSVR: Could not create RenderManager";
+        if (_osvrRender != nullptr) {
+            delete _osvrRender;
+            _osvrRender = nullptr;
+        }
         return false;
     }
 
     osvr::renderkit::RenderManager::OpenResults result = _osvrRender->OpenDisplay();
     if (result.status == osvr::renderkit::RenderManager::OpenStatus::FAILURE) {
-        qDebug() << "OSVR: Could not open display";  // TODO: Delete?
+        qWarning() << "OSVR: Could not open display";
         delete _osvrRender;
         _osvrRender = nullptr;
-        // TODO: Delete _osvrContext?
         return false;
     }
     if (result.library.OpenGL == nullptr) {
-        qDebug() << "OSVR: Graphics library not configured as OpenGL";
+        qWarning() << "OSVR: Graphics library not configured as OpenGL";
         delete _osvrRender;
         _osvrRender = nullptr;
-        // TODO: Delete _osvrContext?
         return false;
     }
 
     if (_osvrRender->GetRenderInfo(_renderParams).size() != 2) {
-        qDebug() << "OSVR: Display does not have 2 eyes";
+        qWarning() << "OSVR: Display does not have 2 eyes";
         delete _osvrRender;
         _osvrRender = nullptr;
-        // TODO: Delete _osvrContext?
         return false;
     }
 
@@ -135,10 +135,9 @@ bool OsvrDisplayPlugin::internalActivate() {
     _renderParams.IPDMeters = _ipd;
     renderInfo = _osvrRender->GetRenderInfo(_renderParams);
     if (renderInfo.size() != 2) {  // Check again to be sure; size() has been observed to occasionally be 0 during operation.
-        qDebug() << "OSVR: Could not obtain render info";
+        qWarning() << "OSVR: Could not obtain render info";
         delete _osvrRender;
         _osvrRender = nullptr;
-        // TODO: Delete _osvrContext?
         return false;
     }
 
@@ -170,7 +169,6 @@ bool OsvrDisplayPlugin::internalActivate() {
     if (!_isActivated) {
         delete _osvrRender;
         _osvrRender = nullptr;
-        // TODO: Delete _osvrContext?
     }
 
     return _isActivated;
@@ -196,9 +194,7 @@ void OsvrDisplayPlugin::customizeContext() {
     _colorBuffers.push_back(_colorBuffer);
     _colorBuffers.push_back(_colorBuffer);  // Single buffer for both eyes.
     if (!_osvrRender->RegisterRenderBuffers(_colorBuffers)) {
-        qDebug() << "OSVR: Could not register render buffers";
-        delete _osvrContext;  // TODO: Correct?
-        //return false;  // TODO: How to handle?
+        qWarning() << "OSVR: Could not register render buffers";
     }
 }
 
@@ -244,7 +240,7 @@ void OsvrDisplayPlugin::hmdPresent() {
     const bool FLIP_IN_Y = true;
 
     if (!_osvrRender->PresentRenderBuffers(_colorBuffers, _presentInfo, _renderParams, _textureViewports, FLIP_IN_Y)) {
-        // TODO: What to do?
+        qWarning() << "OSVR: Failed to present image on HMD";
     }
 };
 
