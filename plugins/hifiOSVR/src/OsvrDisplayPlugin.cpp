@@ -95,6 +95,14 @@ bool OsvrDisplayPlugin::internalActivate() {
         return false;
     }
 
+    if (_osvrRender->GetRenderInfo(_renderParams).size() != 2) {
+        qDebug() << "OSVR: Display does not have 2 eyes";
+        delete _osvrRender;
+        _osvrRender = nullptr;
+        // TODO: Delete _osvrContext?
+        return false;
+    }
+
     // Get HMD's target frame rate.
     osvr::renderkit::RenderTimingInfo timingInfo;
     if (_osvrRender->GetTimingInfo(0, timingInfo)) {
@@ -126,14 +134,15 @@ bool OsvrDisplayPlugin::internalActivate() {
     _renderParams.farClipDistanceMeters = DEFAULT_FAR_CLIP;
     _renderParams.IPDMeters = _ipd;
     renderInfo = _osvrRender->GetRenderInfo(_renderParams);
-    fixRenderInfo(renderInfo);  // TODO: Is this correct when using an OSVR HDK?
-    if (renderInfo.size() != 2) {
-        qDebug() << "OSVR: Display does not have 2 eyes";
+    if (renderInfo.size() != 2) {  // Check again to be sure; size() has been observed to occasionally be 0 during operation.
+        qDebug() << "OSVR: Could not obtain render info";
         delete _osvrRender;
         _osvrRender = nullptr;
         // TODO: Delete _osvrContext?
         return false;
     }
+
+    fixRenderInfo(renderInfo);  // TODO: Is this correct when using an OSVR HDK?
 
     _renderTargetSize = uvec2(
         renderInfo[0].viewport.width + renderInfo[1].viewport.width,
@@ -198,6 +207,11 @@ bool OsvrDisplayPlugin::beginFrameRender(uint32_t frameIndex) {
 
     _osvrContext->update();  // Update tracker state.
     _renderInfo = _osvrRender->GetRenderInfo(_renderParams);
+    if (_renderInfo.size() != 2) {
+        qWarning() << "OSVR: No eye information available to render frame";
+        return false;
+    }
+
     fixRenderInfo(_renderInfo);  // TODO: Is this correct when using an OSVR HDK?
 
     _renderInfo[0].pose.translation = addGlm(_renderInfo[0].pose.translation, _sensorZeroTranslation);
