@@ -12,8 +12,10 @@
 #include "OsvrHelpers.h"
 
 #include <mutex>
+#include <thread>
 
 #include <SharedUtil.h>
+
 
 static osvr::clientkit::ClientContext* context{ nullptr };
 static osvr::clientkit::DisplayConfig* display{ nullptr };
@@ -48,9 +50,13 @@ bool isOsvrDisplayAvailable() {
             if (result) {
                 static const quint64 OSVR_DISPLAY_STARTUP_TIMEOUT = 1000000;  // 1 sec
                 quint64 timeout = usecTimestampNow() + OSVR_DISPLAY_STARTUP_TIMEOUT;
+
+                context->update();
                 while (!display->checkStartup() && usecTimestampNow() < timeout) {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(200));
                     context->update();
                 }
+
                 result = display->checkStartup();
             }
 
