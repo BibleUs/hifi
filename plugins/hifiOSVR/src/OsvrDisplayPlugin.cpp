@@ -83,6 +83,10 @@ bool OsvrDisplayPlugin::internalActivate() {
         }
         return false;
     }
+    _osvrContext->update();
+
+    auto hmdInfo = parseHMDInfo(_osvrContext->getStringParameter("/display"));
+    qDebug() << "OSVR: HMD =" << hmdInfo[HMD_VENDOR] << hmdInfo[HMD_MODEL] << hmdInfo[HMD_VERSION];
 
     osvr::renderkit::RenderManager::OpenResults result = _osvrRender->OpenDisplay();
     if (result.status == osvr::renderkit::RenderManager::OpenStatus::FAILURE) {
@@ -111,11 +115,18 @@ bool OsvrDisplayPlugin::internalActivate() {
         const float MICROSECONDS_PER_SECOND = 1000000.0f;
         _targetFrameRate = roundf(MICROSECONDS_PER_SECOND / (float)timingInfo.hardwareDisplayInterval.microseconds);
         qDebug() << "OSVR: HMD frame rate =" << _targetFrameRate;
+
     } else {
-        // This case happens if RenderManager has asynchronous timewarp enabled.
-        const float DEFAULT_TARGET_FRAME_RATE = 60.0f;
-        _targetFrameRate = DEFAULT_TARGET_FRAME_RATE;
-        qDebug() << "OSVR: Could not obtain HMD's frame rate; using" << _targetFrameRate;
+        // This branch occurs if RenderManager has asynchronous timewarp enabled.
+        if (hmdInfo[HMD_VERSION] == "HDK2") {
+            // Explicitly set frame rate of OSVR HDK2.
+            _targetFrameRate = 90.0f;
+            qDebug() << "OSVR: HMD frame rate =" << _targetFrameRate << "for" << hmdInfo[HMD_VERSION];
+        } else {
+            const float DEFAULT_TARGET_FRAME_RATE = 60.0f;
+            _targetFrameRate = DEFAULT_TARGET_FRAME_RATE;
+            qDebug() << "OSVR: Could not obtain HMD's frame rate; using" << _targetFrameRate;
+        }
     }
 
     // Get HMD's IPD.
@@ -131,7 +142,6 @@ bool OsvrDisplayPlugin::internalActivate() {
 
     // Set up Interface render parameters.
     std::vector<osvr::renderkit::RenderInfo> renderInfo;
-    _osvrContext->update();
     _renderParams.nearClipDistanceMeters = DEFAULT_NEAR_CLIP;
     _renderParams.farClipDistanceMeters = DEFAULT_FAR_CLIP;
     _renderParams.IPDMeters = _ipd;

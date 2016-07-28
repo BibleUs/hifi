@@ -11,6 +11,9 @@
 
 #include "OsvrHelpers.h"
 
+#include <QtCore/QJsonDocument>
+#include <QtCore/QJsonObject>
+
 #include <mutex>
 #include <thread>
 
@@ -78,4 +81,16 @@ osvr::clientkit::ClientContext* getOsvrContext() {
 
 osvr::clientkit::DisplayConfig* getOsvrDisplay() {
     return display;
+}
+
+QMap<QString, QString> parseHMDInfo(const std::string& displayString) {
+    QJsonDocument displayJSON = QJsonDocument::fromJson(QByteArray::fromStdString(displayString));
+    QVariantMap displayInfo = displayJSON.object()["hmd"].toObject()["device"].toObject().toVariantMap();
+
+    QMap<QString, QString> hmdInfo;
+    hmdInfo[HMD_VENDOR] = displayInfo[HMD_VENDOR].toString();
+    hmdInfo[HMD_MODEL] = displayInfo[HMD_MODEL].toString();
+    hmdInfo[HMD_VERSION] = displayInfo[HMD_VERSION].toString();
+
+    return hmdInfo;
 }

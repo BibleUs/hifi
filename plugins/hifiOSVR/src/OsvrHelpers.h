@@ -27,6 +27,10 @@ bool isOsvrDisplayAvailable();
 osvr::clientkit::ClientContext* getOsvrContext();
 osvr::clientkit::DisplayConfig* getOsvrDisplay();
 
+const QString HMD_VENDOR = "vendor";
+const QString HMD_MODEL = "model";
+const QString HMD_VERSION = "Version";
+QMap<QString, QString> parseHMDInfo(const std::string& displayString);
 
 
 inline void fixRenderInfo(std::vector<osvr::renderkit::RenderInfo> &renderInfo) {
@@ -37,7 +41,6 @@ inline void fixRenderInfo(std::vector<osvr::renderkit::RenderInfo> &renderInfo) 
     std::swap(renderInfo[0].projection.top, renderInfo[0].projection.bottom);
     std::swap(renderInfo[1].projection.top, renderInfo[1].projection.bottom);
 }
-
 
 inline glm::mat4 toGlm(const osvr::renderkit::OSVR_ProjectionMatrix &projection) {
     GLdouble proj[16];
