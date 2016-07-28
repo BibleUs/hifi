@@ -212,13 +212,10 @@ bool OsvrDisplayPlugin::beginFrameRender(uint32_t frameIndex) {
 
     fixRenderInfo(_renderInfo);  // TODO: Is this correct when using an OSVR HDK?
 
-    _renderInfo[0].pose.translation = addGlm(_renderInfo[0].pose.translation, _sensorZeroTranslation);
-    _renderInfo[1].pose.translation = addGlm(_renderInfo[1].pose.translation, _sensorZeroTranslation);
-
     _currentRenderFrameInfo = FrameInfo();
     glm::quat rotation = toGlm(_renderInfo[0].pose.rotation) * _sensorZeroRotation;  // Both eye views have the same rotation.
-    glm::vec3 translation = 
-        rotation * ((toGlm(_renderInfo[0].pose.translation) + toGlm(_renderInfo[1].pose.translation)) / 2.0f);
+    glm::vec3 translation = rotation 
+        * ((toGlm(_renderInfo[0].pose.translation) + toGlm(_renderInfo[1].pose.translation)) / 2.0f + _sensorZeroTranslation);
 
     _currentRenderFrameInfo.renderPose = glm::translate(glm::mat4(), translation) * glm::mat4_cast(rotation);
     _currentRenderFrameInfo.presentPose = _currentRenderFrameInfo.renderPose;
