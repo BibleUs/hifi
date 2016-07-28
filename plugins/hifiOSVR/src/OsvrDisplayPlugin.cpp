@@ -51,10 +51,12 @@ void OsvrDisplayPlugin::resetSensors() {
     // Reset HMD tracking.
 
     if (_osvrContext && _osvrRender) {
-        _osvrContext->update();  // Update tracker state.
-        _sensorZeroRotation = glm::inverse(toGlm(_osvrRender->GetRenderInfo()[0].pose.rotation));
-        _sensorZeroTranslation = -0.5f *
-            (toGlm(_osvrRender->GetRenderInfo()[0].pose.translation) + toGlm(_osvrRender->GetRenderInfo()[1].pose.translation));
+        withRenderThreadLock([&] {
+            _osvrContext->update();  // Update tracker state.
+            _sensorZeroRotation = glm::inverse(toGlm(_osvrRender->GetRenderInfo()[0].pose.rotation));
+            _sensorZeroTranslation = -0.5f * (toGlm(_osvrRender->GetRenderInfo()[0].pose.translation) 
+                + toGlm(_osvrRender->GetRenderInfo()[1].pose.translation));
+        });
     }
 }
 
