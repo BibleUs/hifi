@@ -31,4 +31,7 @@ if (WIN32)
     target_include_directories(${TARGET_NAME} PRIVATE ${BOOST_INCLUDE_DIRS})
     target_link_libraries(${TARGET_NAME} ${BOOST_LIBRARIES})
 
+	# Don't build debug because OSVR SDK only includes release libs.
+	SET_TARGET_PROPERTIES(${TARGET_NAME} PROPERTIES EXCLUDE_FROM_DEFAULT_BUILD_DEBUG True)
+
 endif()
