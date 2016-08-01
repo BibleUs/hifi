@@ -8,7 +8,7 @@ string(TOUPPER ${EXTERNAL_NAME} EXTERNAL_NAME_UPPER)
 if (WIN32)
   ExternalProject_Add(
     ${EXTERNAL_NAME}
-    URL http://ctrlaltstudio.com/downloads/hifi/boost_win_1_57_0.zip
+    URL http://public.highfidelity.com/dependencies/boost_win_1_57_0.zip
     URL_MD5 7efc87038bd93a4acc31e37cf0bd01fa
     CONFIGURE_COMMAND ""
     BUILD_COMMAND ""
