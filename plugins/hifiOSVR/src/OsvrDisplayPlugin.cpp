@@ -51,12 +51,10 @@ void OsvrDisplayPlugin::resetSensors() {
     // Reset HMD tracking.
 
     if (_osvrContext && _osvrRender) {
-        withRenderThreadLock([&] {
-            _osvrContext->update();  // Update tracker state.
-            _sensorZeroRotation = glm::inverse(toGlm(_osvrRender->GetRenderInfo()[0].pose.rotation));
-            _sensorZeroTranslation = -0.5f * (toGlm(_osvrRender->GetRenderInfo()[0].pose.translation) 
-                + toGlm(_osvrRender->GetRenderInfo()[1].pose.translation));
-        });
+        _osvrContext->update();  // Update tracker state.
+        _sensorZeroRotation = glm::inverse(toGlm(_osvrRender->GetRenderInfo()[0].pose.rotation));
+        _sensorZeroTranslation = -0.5f * (toGlm(_osvrRender->GetRenderInfo()[0].pose.translation) 
+            + toGlm(_osvrRender->GetRenderInfo()[1].pose.translation));
     }
 }
 
@@ -193,7 +191,7 @@ void OsvrDisplayPlugin::customizeContext() {
 
     // Make OSVR display from Interface frame buffer.
     _colorBuffer.OpenGL = new osvr::renderkit::RenderBufferOpenGL;
-    _colorBuffer.OpenGL->colorBufferName = GetName(_compositeFramebuffer->color);
+    //_colorBuffer.OpenGL->colorBufferName = GetName(_compositeFramebuffer->color);  // TODO
     _colorBuffers.clear();
     _colorBuffers.push_back(_colorBuffer);
     _colorBuffers.push_back(_colorBuffer);  // Single buffer for both eyes.
@@ -222,10 +220,8 @@ bool OsvrDisplayPlugin::beginFrameRender(uint32_t frameIndex) {
     _currentRenderFrameInfo.renderPose = glm::translate(glm::mat4(), translation) * glm::mat4_cast(rotation);
     _currentRenderFrameInfo.presentPose = _currentRenderFrameInfo.renderPose;
 
-    withRenderThreadLock([&] {
-        _uiModelTransform = DependencyManager::get<CompositorHelper>()->getModelTransform();
-        _frameInfos[frameIndex] = _currentRenderFrameInfo;
-    });
+    _uiModelTransform = DependencyManager::get<CompositorHelper>()->getModelTransform();
+    _frameInfos[frameIndex] = _currentRenderFrameInfo;
 
     return Parent::beginFrameRender(frameIndex);
 }
@@ -245,6 +241,7 @@ void OsvrDisplayPlugin::hmdPresent() {
     }
 };
 
+/* TODO
 void OsvrDisplayPlugin::submitSceneTexture(uint32_t frameIndex, const gpu::TexturePointer& sceneTexture) {
     // Identify newly rendered frame for hmdPresent().
 
@@ -253,6 +250,7 @@ void OsvrDisplayPlugin::submitSceneTexture(uint32_t frameIndex, const gpu::Textu
 
     Parent::submitSceneTexture(frameIndex, sceneTexture);
 }
+*/
 
 void OsvrDisplayPlugin::uncustomizeContext() {
     // Revert OpenGL context to desktop's.

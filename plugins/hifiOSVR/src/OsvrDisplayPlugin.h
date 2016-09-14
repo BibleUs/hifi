@@ -19,6 +19,11 @@
 
 #include <display-plugins/hmd/HmdDisplayPlugin.h>
 
+// Free up "near" and "far" default identifiers defined by Windows and used by OSVR.
+#undef near
+#undef far
+
+
 class OsvrDisplayPlugin : public HmdDisplayPlugin {
     using Parent = HmdDisplayPlugin;
 public:
@@ -35,7 +40,7 @@ public:
     void resetSensors() override;
 
     bool beginFrameRender(uint32_t frameIndex) override;
-    void submitSceneTexture(uint32_t frameIndex, const gpu::TexturePointer& sceneTexture) override;
+    //void submitSceneTexture(uint32_t frameIndex, const gpu::TexturePointer& sceneTexture) override;  TODO
 
     void cycleDebugOutput() override;
 

@@ -20,7 +20,7 @@
 #include "OsvrDisplayPlugin.h"
 #include "OsvrControllerManager.h"
 
-class OpenVrProvider : public QObject, public DisplayProvider, InputProvider
+class OsvrProvider : public QObject, public DisplayProvider, InputProvider
 {
     Q_OBJECT
     Q_PLUGIN_METADATA(IID DisplayProvider_iid FILE "plugin.json")
@@ -29,8 +29,8 @@ class OpenVrProvider : public QObject, public DisplayProvider, InputProvider
     Q_INTERFACES(InputProvider)
 
 public:
-    OpenVrProvider(QObject* parent = nullptr) : QObject(parent) {}
-    virtual ~OpenVrProvider() {}
+    OsvrProvider(QObject* parent = nullptr) : QObject(parent) {}
+    virtual ~OsvrProvider() {}
 
     virtual DisplayPluginList getDisplayPlugins() override {
         static std::once_flag once;

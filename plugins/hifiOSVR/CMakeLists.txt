@@ -17,7 +17,7 @@ if (WIN32)
     set(TARGET_NAME hifiOSVR)
     setup_hifi_plugin(OpenGL)
 
-    link_hifi_libraries(shared gl plugins display-plugins controllers)
+    link_hifi_libraries(shared gl gpu plugins display-plugins controllers)
     include_hifi_library_headers(octree)
 
     add_dependency_external_projects(osvr)
