@@ -13,8 +13,11 @@
 
 #include "OsvrDisplayPlugin.h"
 
-#include <ViewFrustum.h>
 #include <display-plugins/CompositorHelper.h>
+#include <gl/OglplusHelpers.h>
+#include <gpu/gl/GLBackend.h>
+
+#include <ViewFrustum.h>
 
 #include "OsvrHelpers.h"
 
@@ -189,9 +192,24 @@ void OsvrDisplayPlugin::customizeContext() {
 
     Parent::customizeContext();  // Must be before RegisterRenderBuffers().
 
-    // Make OSVR display from Interface frame buffer.
+    // Set up texture and buffer for OSVR rendering.
+    GLuint colorBufferName;
+    glGenTextures(1, &colorBufferName);
+    glBindTexture(GL_TEXTURE_2D, colorBufferName);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, _renderTargetSize.x, _renderTargetSize.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    _outputFramebuffer =  gpu::FramebufferPointer(
+        gpu::Framebuffer::create(gpu::Element::COLOR_RGBA_32, _renderTargetSize.x, _renderTargetSize.y));
+    auto fbo = getGLBackend()->getFramebufferID(_outputFramebuffer);
+    glNamedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, colorBufferName, 0); 
+
+    // Register render texture with OSVR library.
     _colorBuffer.OpenGL = new osvr::renderkit::RenderBufferOpenGL;
-    //_colorBuffer.OpenGL->colorBufferName = GetName(_compositeFramebuffer->color);  // TODO
+    _colorBuffer.OpenGL->colorBufferName = colorBufferName;
     _colorBuffers.clear();
     _colorBuffers.push_back(_colorBuffer);
     _colorBuffers.push_back(_colorBuffer);  // Single buffer for both eyes.
@@ -229,28 +247,37 @@ bool OsvrDisplayPlugin::beginFrameRender(uint32_t frameIndex) {
 void OsvrDisplayPlugin::hmdPresent() {
     // Submit frame to HMD.
 
-    if (_renderedFrame == _presentedFrame) {
+    auto frameIndex = _currentFrame->frameIndex;
+
+    if (frameIndex == _presentedFrame) {
         return;  // Only submit new frame so that OSVR RenderManager's asynchronous timewarp can do its thing.
     }
-    _presentedFrame = _renderedFrame;
+    _presentedFrame = frameIndex;
+
+    PROFILE_RANGE_EX(__FUNCTION__, 0xff00ff00, (uint64_t)frameIndex);
+
+    // Copy image into HMD buffer for display.
+    // FIXME per similar OculusDisplayPlugin FIXME.
+    render([&](gpu::Batch& batch) {
+        batch.enableStereo(false);
+        batch.setFramebuffer(_outputFramebuffer);
+        batch.setViewportTransform(ivec4(uvec2(), _outputFramebuffer->getSize()));
+        batch.setStateScissorRect(ivec4(uvec2(), _outputFramebuffer->getSize()));
+        batch.resetViewTransform();
+        batch.setProjectionTransform(mat4());
+        batch.setPipeline(_presentPipeline);
+        batch.setResourceTexture(0, _compositeFramebuffer->getRenderBuffer(0));
+        batch.draw(gpu::TRIANGLE_STRIP, 4);
+    });
 
     const bool FLIP_IN_Y = true;
+
+    _presentInfo = _renderInfo;
 
     if (!_osvrRender->PresentRenderBuffers(_colorBuffers, _presentInfo, _renderParams, _textureViewports, FLIP_IN_Y)) {
         qWarning() << "OSVR: Failed to present image on HMD";
     }
 };
-
-/* TODO
-void OsvrDisplayPlugin::submitSceneTexture(uint32_t frameIndex, const gpu::TexturePointer& sceneTexture) {
-    // Identify newly rendered frame for hmdPresent().
-
-    _renderedFrame = frameIndex;
-    _presentInfo = _renderInfo;
-
-    Parent::submitSceneTexture(frameIndex, sceneTexture);
-}
-*/
 
 void OsvrDisplayPlugin::uncustomizeContext() {
     // Revert OpenGL context to desktop's.

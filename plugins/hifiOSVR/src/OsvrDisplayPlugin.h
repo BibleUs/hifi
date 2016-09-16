@@ -40,7 +40,6 @@ public:
     void resetSensors() override;
 
     bool beginFrameRender(uint32_t frameIndex) override;
-    //void submitSceneTexture(uint32_t frameIndex, const gpu::TexturePointer& sceneTexture) override;  TODO
 
     void cycleDebugOutput() override;
 
@@ -69,11 +68,12 @@ private:
 
     float _targetFrameRate{ 60.0f };
 
-    uint32_t _renderedFrame{ 0 };
     uint32_t _presentedFrame{ 0 };
 
     glm::quat _sensorZeroRotation{ glm::quat() };
     glm::vec3 _sensorZeroTranslation{ glm::vec3() };
+
+    gpu::FramebufferPointer _outputFramebuffer;
 };
 
 #endif
