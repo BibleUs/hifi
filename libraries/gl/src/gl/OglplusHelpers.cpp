@@ -10,6 +10,7 @@
 #include <set>
 #include <oglplus/shapes/plane.hpp>
 #include <oglplus/shapes/sky_box.hpp>
+#include "GLLogging.h"
 
 using namespace oglplus;
 using namespace oglplus::shapes;
@@ -190,7 +191,7 @@ public:
         const int stacks_) {
         //UV mapping source: http://www.mvps.org/directx/articles/spheremap.htm
         if (fov >= PI) {
-            qDebug() << "TexturedHemisphere::buildVBO(): FOV greater or equal than Pi will create issues";
+            qCDebug(glLogging) << "TexturedHemisphere::buildVBO(): FOV greater or equal than Pi will create issues";
         }
 
         int gridSize = std::max(slices_, stacks_);
@@ -509,16 +510,28 @@ TexturePtr TextureRecycler::getNextTexture() {
     using namespace oglplus;
     if (_readyTextures.empty()) {
         TexturePtr newTexture(new Texture());
-        Context::Bound(oglplus::Texture::Target::_2D, *newTexture)
-            .MinFilter(TextureMinFilter::Linear)
-            .MagFilter(TextureMagFilter::Linear)
-            .WrapS(TextureWrap::ClampToEdge)
-            .WrapT(TextureWrap::ClampToEdge)
-            .Image2D(
-            0, PixelDataInternalFormat::RGBA8,
-            _size.x, _size.y,
-            0, PixelDataFormat::RGB, PixelDataType::UnsignedByte, nullptr
-            );
+
+        if (_useMipmaps) {
+            Context::Bound(oglplus::Texture::Target::_2D, *newTexture)
+                .MinFilter(TextureMinFilter::LinearMipmapLinear)
+                .MagFilter(TextureMagFilter::Linear)
+                .WrapS(TextureWrap::ClampToEdge)
+                .WrapT(TextureWrap::ClampToEdge)
+                .Anisotropy(8.0f)
+                .LODBias(-0.2f)
+                .Image2D(0, PixelDataInternalFormat::RGBA8,
+                         _size.x, _size.y,
+                         0, PixelDataFormat::RGB, PixelDataType::UnsignedByte, nullptr);
+        } else {
+            Context::Bound(oglplus::Texture::Target::_2D, *newTexture)
+                .MinFilter(TextureMinFilter::Linear)
+                .MagFilter(TextureMagFilter::Linear)
+                .WrapS(TextureWrap::ClampToEdge)
+                .WrapT(TextureWrap::ClampToEdge)
+                .Image2D(0, PixelDataInternalFormat::RGBA8,
+                         _size.x, _size.y,
+                         0, PixelDataFormat::RGB, PixelDataType::UnsignedByte, nullptr);
+        }
         GLuint texId = GetName(*newTexture);
         _allTextures[texId] = TexInfo{ newTexture, _size };
         _readyTextures.push(newTexture);

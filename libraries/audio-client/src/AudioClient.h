@@ -16,6 +16,7 @@
 #include <memory>
 #include <vector>
 #include <mutex>
+#include <queue>
 
 #include <QtCore/qsystemdetection.h>
 #include <QtCore/QByteArray>
@@ -86,7 +87,7 @@ public:
 
     using Mutex = std::mutex;
     using Lock = std::unique_lock<Mutex>;
-    
+
     class AudioOutputIODevice : public QIODevice {
     public:
         AudioOutputIODevice(MixedProcessedAudioStream& receivedAudioStream, AudioClient* audio) :
@@ -94,8 +95,8 @@ public:
 
         void start() { open(QIODevice::ReadOnly); }
         void stop() { close(); }
-        qint64    readData(char * data, qint64 maxSize);
-        qint64    writeData(const char * data, qint64 maxSize) { return 0; }
+        qint64 readData(char * data, qint64 maxSize) override;
+        qint64 writeData(const char * data, qint64 maxSize) override { return 0; }
         int getRecentUnfulfilledReads() { int unfulfilledReads = _unfulfilledReads; _unfulfilledReads = 0; return unfulfilledReads; }
     private:
         MixedProcessedAudioStream& _receivedAudioStream;
@@ -134,10 +135,15 @@ public:
     int getOutputStarveDetectionThreshold() { return _outputStarveDetectionThreshold.get(); }
     void setOutputStarveDetectionThreshold(int threshold) { _outputStarveDetectionThreshold.set(threshold); }
 
+    int getGateThreshold() { return _gate.getThreshold(); }
+    void setGateThreshold(int threshold) { _gate.setThreshold(threshold); }
+
     void setPositionGetter(AudioPositionGetter positionGetter) { _positionGetter = positionGetter; }
     void setOrientationGetter(AudioOrientationGetter orientationGetter) { _orientationGetter = orientationGetter; }
-    
+
     QVector<AudioInjector*>& getActiveLocalAudioInjectors() { return _activeLocalAudioInjectors; }
+
+    void checkDevices();
 
     static const float CALLBACK_ACCELERATOR_RATIO;
 
@@ -163,7 +169,7 @@ public slots:
     void audioMixerKilled();
     void toggleMute();
 
-    virtual void setIsStereoInput(bool stereo);
+    virtual void setIsStereoInput(bool stereo) override;
 
     void toggleAudioNoiseReduction() { _isNoiseGateEnabled = !_isNoiseGateEnabled; }
 
@@ -175,7 +181,7 @@ public slots:
 
     int setOutputBufferSize(int numFrames, bool persist = true);
 
-    virtual bool outputLocalInjector(bool isStereo, AudioInjector* injector);
+    virtual bool outputLocalInjector(bool isStereo, AudioInjector* injector) override;
 
     bool switchInputToAudioDevice(const QString& inputDeviceName);
     bool switchOutputToAudioDevice(const QString& outputDeviceName);
@@ -215,29 +221,47 @@ protected:
     AudioClient();
     ~AudioClient();
 
-    virtual void customDeleter() {
+    virtual void customDeleter() override {
         deleteLater();
     }
 
 private:
     void outputFormatChanged();
-    void mixLocalAudioInjectors(int16_t* inputBuffer);
+    void mixLocalAudioInjectors(float* mixBuffer);
     float azimuthForSource(const glm::vec3& relativePosition);
     float gainForSource(float distance, float volume);
 
+    class Gate {
+    public:
+        Gate(AudioClient* audioClient, int threshold);
+
+        int getThreshold() { return _threshold; }
+        void setThreshold(int threshold);
+
+        void insert(QSharedPointer<ReceivedMessage> message);
+
+    private:
+        void flush();
+
+        AudioClient* _audioClient;
+        std::queue<QSharedPointer<ReceivedMessage>> _queue;
+        int _index{ 0 };
+        int _threshold;
+    };
+
+    Setting::Handle<int> _gateThreshold;
+    Gate _gate;
+
     Mutex _injectorsMutex;
-    QByteArray firstInputFrame;
     QAudioInput* _audioInput;
     QAudioFormat _desiredInputFormat;
     QAudioFormat _inputFormat;
     QIODevice* _inputDevice;
     int _numInputCallbackBytes;
-    int16_t _localProceduralSamples[AudioConstants::NETWORK_FRAME_SAMPLES_PER_CHANNEL];
     QAudioOutput* _audioOutput;
     QAudioFormat _desiredOutputFormat;
     QAudioFormat _outputFormat;
     int _outputFrameSize;
-    int16_t _outputProcessingBuffer[AudioConstants::NETWORK_FRAME_SAMPLES_STEREO];
     int _numOutputCallbackBytes;
     QAudioOutput* _loopbackAudioOutput;
     QIODevice* _loopbackOutputDevice;
@@ -282,7 +306,7 @@ private:
     AudioSRC* _networkToOutputResampler;
 
     // for local hrtf-ing
-    float _hrtfBuffer[AudioConstants::NETWORK_FRAME_SAMPLES_STEREO];
+    float _mixBuffer[AudioConstants::NETWORK_FRAME_SAMPLES_STEREO];
     int16_t _scratchBuffer[AudioConstants::NETWORK_FRAME_SAMPLES_STEREO];
     AudioLimiter _audioLimiter;
 
@@ -298,7 +322,6 @@ private:
     // Callback acceleration dependent calculations
     int calculateNumberOfInputCallbackBytes(const QAudioFormat& format) const;
     int calculateNumberOfFrameSamples(int numBytes) const;
-    float calculateDeviceToNetworkInputRatio() const;
 
     quint16 _outgoingAvatarAudioSequenceNumber;
 
@@ -313,10 +336,9 @@ private:
 
     QVector<QString> _inputDevices;
     QVector<QString> _outputDevices;
-    void checkDevices();
 
     bool _hasReceivedFirstPacket = false;
-    
+
     QVector<AudioInjector*> _activeLocalAudioInjectors;
 
     CodecPluginPointer _codec;

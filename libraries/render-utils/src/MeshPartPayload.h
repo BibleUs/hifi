@@ -26,7 +26,7 @@ class Model;
 class MeshPartPayload {
 public:
     MeshPartPayload() {}
-    MeshPartPayload(const std::shared_ptr<const model::Mesh>& mesh, int partIndex, model::MaterialPointer material, const Transform& transform, const Transform& offsetTransform);
+    MeshPartPayload(const std::shared_ptr<const model::Mesh>& mesh, int partIndex, model::MaterialPointer material);
 
     typedef render::Payload<MeshPartPayload> Payload;
     typedef Payload::DataPointer Pointer;
@@ -64,6 +64,15 @@ public:
     mutable model::Box _worldBound;
     
     bool _hasColorAttrib = false;
+
+    size_t getVerticesCount() const { return _drawMesh ? _drawMesh->getNumVertices() : 0; }
+    size_t getMaterialTextureSize() { return _materialTextureSize; }
+    int getMaterialTextureCount() { return _materialTextureCount; }
+    bool calculateMaterialSize();
+
+protected:
+    size_t _materialTextureSize { 0 };
+    int _materialTextureCount { 0 };
 };
 
 namespace render {
@@ -110,7 +119,6 @@ public:
 private:
     quint64 _fadeStartTime { 0 };
     bool _hasStartedFade { false };
-    mutable bool _prevHasStartedFade{ false };
     mutable bool _hasFinishedFade { false };
     mutable bool _isFading { false };
 };

@@ -118,12 +118,12 @@ DomainServer::DomainServer(int argc, char* argv[]) :
 
     setupNodeListAndAssignments();
 
-    if (_type == MetaverseDomain) {
-        // if we have a metaverse domain, we'll need an access token to heartbeat handle auto-networking
+    if (_type != NonMetaverse) {
+        // if we have a metaverse domain, we'll use an access token for API calls
         resetAccountManagerAccessToken();
-    }
 
-    setupAutomaticNetworking();
+        setupAutomaticNetworking();
+    }
 
     if (!getID().isNull() && _type != NonMetaverse) {
         // setup periodic heartbeats to metaverse API
@@ -368,11 +368,11 @@ void DomainServer::setupNodeListAndAssignments() {
     const QString CUSTOM_LOCAL_PORT_OPTION = "metaverse.local_port";
 
     QVariant localPortValue = _settingsManager.valueOrDefaultValueForKeyPath(CUSTOM_LOCAL_PORT_OPTION);
-    unsigned short domainServerPort = (unsigned short) localPortValue.toUInt();
+    int domainServerPort = localPortValue.toInt();
 
     QVariantMap& settingsMap = _settingsManager.getSettingsMap();
 
-    unsigned short domainServerDTLSPort = 0;
+    int domainServerDTLSPort = INVALID_PORT;
 
     if (_isUsingDTLS) {
         domainServerDTLSPort = DEFAULT_DOMAIN_SERVER_DTLS_PORT;
@@ -469,8 +469,8 @@ bool DomainServer::resetAccountManagerAccessToken() {
             if (accessTokenVariant && accessTokenVariant->canConvert(QMetaType::QString)) {
                 accessToken = accessTokenVariant->toString();
             } else {
-                qDebug() << "A domain-server feature that requires authentication is enabled but no access token is present.";
-                qDebug() << "Set an access token via the web interface, in your user or master config"
+                qWarning() << "No access token is present. Some operations that use the metaverse API will fail.";
+                qDebug() << "Set an access token via the web interface, in your user config"
                     << "at keypath metaverse.access_token or in your ENV at key DOMAIN_SERVER_ACCESS_TOKEN";
 
                 // clear any existing access token from AccountManager
@@ -480,7 +480,7 @@ bool DomainServer::resetAccountManagerAccessToken() {
             }
         } else {
             qDebug() << "Using access token from DOMAIN_SERVER_ACCESS_TOKEN in env. This overrides any access token present"
-                << " in the user or master config.";
+                << " in the user config.";
         }
 
         // give this access token to the AccountManager
@@ -1756,6 +1756,7 @@ bool DomainServer::handleHTTPSRequest(HTTPSConnection* connection, const QUrl &u
                 .arg(authorizationCode, oauthRedirectURL().toString(), _oauthClientID, _oauthClientSecret);
 
             QNetworkRequest tokenRequest(tokenRequestUrl);
+            tokenRequest.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
             tokenRequest.setHeader(QNetworkRequest::UserAgentHeader, HIGH_FIDELITY_USER_AGENT);
             tokenRequest.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
 
@@ -1949,6 +1950,7 @@ QNetworkReply* DomainServer::profileRequestGivenTokenReply(QNetworkReply* tokenR
     profileURL.setQuery(QString("%1=%2").arg(OAUTH_JSON_ACCESS_TOKEN_KEY, accessToken));
 
     QNetworkRequest profileRequest(profileURL);
+    profileRequest.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
     profileRequest.setHeader(QNetworkRequest::UserAgentHeader, HIGH_FIDELITY_USER_AGENT);
     return NetworkAccessManager::getInstance().get(profileRequest);
 }

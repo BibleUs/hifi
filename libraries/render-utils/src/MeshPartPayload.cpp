@@ -15,6 +15,7 @@
 
 #include "DeferredLightingEffect.h"
 #include "Model.h"
+#include "EntityItem.h"
 
 using namespace render;
 
@@ -45,11 +46,9 @@ template <> void payloadRender(const MeshPartPayload::Pointer& payload, RenderAr
 }
 }
 
-MeshPartPayload::MeshPartPayload(const std::shared_ptr<const model::Mesh>& mesh, int partIndex, model::MaterialPointer material, const Transform& transform, const Transform& offsetTransform) {
-
+MeshPartPayload::MeshPartPayload(const std::shared_ptr<const model::Mesh>& mesh, int partIndex, model::MaterialPointer material) {
     updateMeshPart(mesh, partIndex);
     updateMaterial(material);
-    updateTransform(transform, offsetTransform);
 }
 
 void MeshPartPayload::updateMeshPart(const std::shared_ptr<const model::Mesh>& drawMesh, int partIndex) {
@@ -72,7 +71,38 @@ void MeshPartPayload::updateTransform(const Transform& transform, const Transfor
 
 void MeshPartPayload::updateMaterial(model::MaterialPointer drawMaterial) {
     _drawMaterial = drawMaterial;
+    calculateMaterialSize();
 }
+
+bool MeshPartPayload::calculateMaterialSize() {
+    bool allTextures = true; // assume we got this...
+    _materialTextureSize = 0;
+    _materialTextureCount = 0;
+    auto textureMaps = _drawMaterial->getTextureMaps();
+    for (auto const &textureMapItem : textureMaps) {
+        auto textureMap = textureMapItem.second;
+        if (textureMap) {
+            auto textureSoure = textureMap->getTextureSource();
+            if (textureSoure) {
+                auto texture = textureSoure->getGPUTexture();
+                if (texture) {
+                    //auto storedSize = texture->getStoredSize();
+                    auto size = texture->getSize();
+                    _materialTextureSize += size;
+                    _materialTextureCount++;
+                } else {
+                    allTextures = false;
+                }
+            } else {
+                allTextures = false;
+            }
+        } else {
+            allTextures = false;
+        }
+    }
+    return allTextures;
+}
+
 
 ItemKey MeshPartPayload::getKey() const {
     ItemKey::Builder builder;
@@ -348,8 +378,8 @@ void ModelMeshPartPayload::initCache() {
     auto networkMaterial = _model->getGeometry()->getShapeMaterial(_shapeID);
     if (networkMaterial) {
         _drawMaterial = networkMaterial;
-    };
-
+        calculateMaterialSize();
+    }
 }
 
 void ModelMeshPartPayload::notifyLocationChanged() {
@@ -413,8 +443,7 @@ ShapeKey ModelMeshPartPayload::getShapeKey() const {
     // if our index is ever out of range for either meshes or networkMeshes, then skip it, and set our _meshGroupsKnown
     // to false to rebuild out mesh groups.
     if (_meshIndex < 0 || _meshIndex >= (int)networkMeshes.size() || _meshIndex > geometry.meshes.size()) {
-        _model->_meshGroupsKnown = false; // regenerate these lists next time around.
-        _model->_readyWhenAdded = false; // in case any of our users are using scenes
+        _model->_needsFixupInScene = true; // trigger remove/add cycle
         _model->invalidCalculatedMeshBoxes(); // if we have to reload, we need to assume our mesh boxes are all invalid
         return ShapeKey::Builder::invalid();
     }
@@ -517,26 +546,44 @@ void ModelMeshPartPayload::bindTransform(gpu::Batch& batch, const ShapePipeline:
 }
 
 void ModelMeshPartPayload::startFade() {
-    _fadeStartTime = usecTimestampNow();
-    _hasStartedFade = true;
-    _prevHasStartedFade = false;
-    _hasFinishedFade = false;
+    bool shouldFade = EntityItem::getEntitiesShouldFadeFunction()();
+    if (shouldFade) {
+        _fadeStartTime = usecTimestampNow();
+        _hasStartedFade = true;
+        _hasFinishedFade = false;
+    } else {
+        _isFading = true;
+        _hasStartedFade = true;
+        _hasFinishedFade = true;
+    }
 }
 
 void ModelMeshPartPayload::render(RenderArgs* args) const {
     PerformanceTimer perfTimer("ModelMeshPartPayload::render");
 
-    if (!_model->_readyWhenAdded || !_model->_isVisible || !_hasStartedFade) {
+    if (!_model->addedToScene() || !_model->isVisible()) {
         return; // bail asap
     }
+
+    // If we didn't start the fade in, check if we are ready to now....
+    if (!_hasStartedFade && _model->isLoaded() && _model->getGeometry()->areTexturesLoaded()) {
+        const_cast<ModelMeshPartPayload&>(*this).startFade();
+    }
+
+    // If we still didn't start the fade in, bail
+    if (!_hasStartedFade) {
+        return;
+    }
+
 
     // When an individual mesh parts like this finishes its fade, we will mark the Model as 
     // having render items that need updating
     bool nextIsFading = _isFading ? isStillFading() : false;
-    if (_isFading != nextIsFading || _prevHasStartedFade != _hasStartedFade) {
-        _isFading = nextIsFading || _prevHasStartedFade != _hasStartedFade;
-        _hasFinishedFade = _prevHasStartedFade == _hasStartedFade && !_isFading;
-        _prevHasStartedFade = _hasStartedFade;
+    bool startFading = !_isFading && !_hasFinishedFade && _hasStartedFade;
+    bool endFading = _isFading && !nextIsFading;
+    if (startFading || endFading) {
+        _isFading = startFading;
+        _hasFinishedFade = endFading;
         _model->setRenderItemsNeedUpdate();
     }
 

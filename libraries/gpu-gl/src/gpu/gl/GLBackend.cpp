@@ -44,10 +44,10 @@ BackendPointer GLBackend::createBackend() {
     auto version = QOpenGLContextWrapper::currentContextVersion();
     std::shared_ptr<GLBackend> result;
     if (!disableOpenGL45 && version >= 0x0405) {
-        qDebug() << "Using OpenGL 4.5 backend";
+        qCDebug(gpugllogging) << "Using OpenGL 4.5 backend";
         result = std::make_shared<gpu::gl45::GL45Backend>();
     } else {
-        qDebug() << "Using OpenGL 4.1 backend";
+        qCDebug(gpugllogging) << "Using OpenGL 4.1 backend";
         result = std::make_shared<gpu::gl41::GL41Backend>();
     }
     result->initInput();
@@ -315,7 +315,6 @@ void GLBackend::render(const Batch& batch) {
 
 
 void GLBackend::syncCache() {
-    recycle();
     syncTransformStateCache();
     syncPipelineStateCache();
     syncInputStateCache();
@@ -582,7 +581,7 @@ void GLBackend::releaseShader(GLuint id) const {
 
 void GLBackend::releaseProgram(GLuint id) const {
     Lock lock(_trashMutex);
-    _shadersTrash.push_back(id);
+    _programsTrash.push_back(id);
 }
 
 void GLBackend::releaseQuery(GLuint id) const {

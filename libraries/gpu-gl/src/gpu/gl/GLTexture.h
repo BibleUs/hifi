@@ -11,6 +11,7 @@
 #include "GLShared.h"
 #include "GLTextureTransfer.h"
 #include "GLBackend.h"
+#include "GLTexelFormat.h"
 
 namespace gpu { namespace gl {
 
@@ -19,8 +20,12 @@ struct GLFilterMode {
     GLint magFilter;
 };
 
+
 class GLTexture : public GLObject<Texture> {
 public:
+    static const uint16_t INVALID_MIP { (uint16_t)-1 };
+    static const uint8_t INVALID_FACE { (uint8_t)-1 };
+
     static void initTextureTransferHelper();
     static std::shared_ptr<GLTextureTransferHelper> _textureTransferHelper;
 
@@ -55,21 +60,26 @@ public:
         // If we just did a transfer, return the object after doing post-transfer work
         if (GLSyncState::Transferred == object->getSyncState()) {
             object->postTransfer();
-            return object;
         }
 
-        if (object->isReady()) {
-            // Do we need to reduce texture memory usage?
-            if (object->isOverMaxMemory() && texturePointer->incremementMinMip()) {
-                // WARNING, this code path will essentially `delete this`, 
-                // so no dereferencing of this instance should be done past this point
-                object = new GLTextureType(backend.shared_from_this(), texture, object);
-                _textureTransferHelper->transferTexture(texturePointer);
-            }
-        } else if (object->isOutdated()) {
+        if (object->isOutdated()) {
             // Object might be outdated, if so, start the transfer
             // (outdated objects that are already in transfer will have reported 'true' for ready()
             _textureTransferHelper->transferTexture(texturePointer);
+            return nullptr;
+        }
+
+        if (!object->isReady()) {
+            return nullptr;
+        }
+
+        // Do we need to reduce texture memory usage?
+        if (object->isOverMaxMemory() && texturePointer->incremementMinMip()) {
+            // WARNING, this code path will essentially `delete this`, 
+            // so no dereferencing of this instance should be done past this point
+            object = new GLTextureType(backend.shared_from_this(), texture, object);
+            _textureTransferHelper->transferTexture(texturePointer);
+            return nullptr;
         }
 
         return object;
@@ -154,11 +164,13 @@ public:
 
     bool isOverMaxMemory() const;
 
-protected:
+    uint16 usedMipLevels() const { return (_maxMip - _minMip) + 1; }
+
     static const size_t CUBE_NUM_FACES = 6;
     static const GLenum CUBE_FACE_LAYOUT[6];
     static const GLFilterMode FILTER_MODES[Sampler::NUM_FILTERS];
     static const GLenum WRAP_MODES[Sampler::NUM_WRAP_MODES];
+protected:
 
     static const std::vector<GLenum>& getFaceTargets(GLenum textureType);
 
@@ -177,19 +189,22 @@ protected:
     GLTexture(const std::weak_ptr<gl::GLBackend>& backend, const Texture& texture, GLuint id, GLTexture* originalTexture);
 
     void setSyncState(GLSyncState syncState) { _syncState = syncState; }
-    uint16 usedMipLevels() const { return (_maxMip - _minMip) + 1; }
 
     void createTexture();
     
     virtual void allocateStorage() const = 0;
     virtual void updateSize() const = 0;
-    virtual void transfer() const = 0;
     virtual void syncSampler() const = 0;
     virtual void generateMips() const = 0;
     virtual void withPreservedTexture(std::function<void()> f) const = 0;
 
 protected:
     void setSize(GLuint size) const;
+
+    virtual void startTransfer();
+    // Returns true if this is the last block required to complete transfer
+    virtual bool continueTransfer() { return false; }
+    virtual void finishTransfer();
 
 private:
 

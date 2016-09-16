@@ -18,12 +18,15 @@
 #include <QtGui/QOpenGLContext>
 
 #include "GLHelpers.h"
+#include "GLLogging.h"
+
 
 OffscreenGLCanvas::OffscreenGLCanvas() : _context(new QOpenGLContext), _offscreenSurface(new QOffscreenSurface){
 }
 
 OffscreenGLCanvas::~OffscreenGLCanvas() {
-    _context->doneCurrent();
+    // A context with logging enabled needs to be current when it's destroyed
+    _context->makeCurrent(_offscreenSurface);
     delete _context;
     _context = nullptr;
 
@@ -55,11 +58,10 @@ bool OffscreenGLCanvas::makeCurrent() {
     Q_ASSERT(result);
     
     std::call_once(_reportOnce, [this]{
-        qDebug() << "GL Version: " << QString((const char*) glGetString(GL_VERSION));
-        qDebug() << "GL Shader Language Version: " << QString((const char*) glGetString(GL_SHADING_LANGUAGE_VERSION));
-        qDebug() << "GL Vendor: " << QString((const char*) glGetString(GL_VENDOR));
-        qDebug() << "GL Renderer: " << QString((const char*) glGetString(GL_RENDERER));
-        GLDebug::setupLogger(this);
+        qCDebug(glLogging) << "GL Version: " << QString((const char*) glGetString(GL_VERSION));
+        qCDebug(glLogging) << "GL Shader Language Version: " << QString((const char*) glGetString(GL_SHADING_LANGUAGE_VERSION));
+        qCDebug(glLogging) << "GL Vendor: " << QString((const char*) glGetString(GL_VENDOR));
+        qCDebug(glLogging) << "GL Renderer: " << QString((const char*) glGetString(GL_RENDERER));
     });
 
     return result;

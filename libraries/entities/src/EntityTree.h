@@ -40,7 +40,6 @@ class EntityItemFBXService {
 public:
     virtual const FBXGeometry* getGeometryForEntity(EntityItemPointer entityItem) = 0;
     virtual ModelPointer getModelForEntityItem(EntityItemPointer entityItem) = 0;
-    virtual const FBXGeometry* getCollisionGeometryForEntity(EntityItemPointer entityItem) = 0;
 };
 
 
@@ -153,6 +152,11 @@ public:
     /// \param foundEntities[out] vector of non-EntityItemPointer
     /// \remark Side effect: any initial contents in entities will be lost
     void findEntities(const AABox& box, QVector<EntityItemPointer>& foundEntities);
+
+    /// finds all entities within a frustum
+    /// \parameter frustum the query frustum
+    /// \param foundEntities[out] vector of EntityItemPointer
+    void findEntities(const ViewFrustum& frustum, QVector<EntityItemPointer>& foundEntities);
 
     void addNewlyCreatedHook(NewlyCreatedEntityHook* hook);
     void removeNewlyCreatedHook(NewlyCreatedEntityHook* hook);
@@ -277,6 +281,7 @@ protected:
     static bool findInSphereOperation(OctreeElementPointer element, void* extraData);
     static bool findInCubeOperation(OctreeElementPointer element, void* extraData);
     static bool findInBoxOperation(OctreeElementPointer element, void* extraData);
+    static bool findInFrustumOperation(OctreeElementPointer element, void* extraData);
     static bool sendEntitiesOperation(OctreeElementPointer element, void* extraData);
 
     void notifyNewlyCreatedEntity(const EntityItem& newEntity, const SharedNodePointer& senderNode);
