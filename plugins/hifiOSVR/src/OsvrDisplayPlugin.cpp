@@ -59,6 +59,8 @@ void OsvrDisplayPlugin::resetSensors() {
         _sensorZeroTranslation = -0.5f * (toGlm(_osvrRender->GetRenderInfo()[0].pose.translation) 
             + toGlm(_osvrRender->GetRenderInfo()[1].pose.translation));
     }
+
+    _currentRenderFrameInfo.renderPose = glm::mat4();
 }
 
 void OsvrDisplayPlugin::cycleDebugOutput() {
@@ -170,6 +172,7 @@ bool OsvrDisplayPlugin::internalActivate() {
     osvr::renderkit::OSVR_ViewportDescription textureViewportRight{ 0.5f, 0.0f, 0.5f, 1.0f };
     _textureViewports.push_back(textureViewportRight);
 
+    // Activate parent.
     _isActivated = Parent::internalActivate();
     if (!_isActivated) {
         delete _osvrRender;
@@ -201,6 +204,7 @@ void OsvrDisplayPlugin::customizeContext() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glBindTexture(GL_TEXTURE_2D, 0);
 
     _outputFramebuffer =  gpu::FramebufferPointer(
         gpu::Framebuffer::create(gpu::Element::COLOR_RGBA_32, _renderTargetSize.x, _renderTargetSize.y));
@@ -238,8 +242,10 @@ bool OsvrDisplayPlugin::beginFrameRender(uint32_t frameIndex) {
     _currentRenderFrameInfo.renderPose = glm::translate(glm::mat4(), translation) * glm::mat4_cast(rotation);
     _currentRenderFrameInfo.presentPose = _currentRenderFrameInfo.renderPose;
 
-    _uiModelTransform = DependencyManager::get<CompositorHelper>()->getModelTransform();
-    _frameInfos[frameIndex] = _currentRenderFrameInfo;
+    withNonPresentThreadLock([&] {
+        _uiModelTransform = DependencyManager::get<CompositorHelper>()->getModelTransform();
+        _frameInfos[frameIndex] = _currentRenderFrameInfo;
+    });
 
     return Parent::beginFrameRender(frameIndex);
 }
@@ -277,6 +283,8 @@ void OsvrDisplayPlugin::hmdPresent() {
     if (!_osvrRender->PresentRenderBuffers(_colorBuffers, _presentInfo, _renderParams, _textureViewports, FLIP_IN_Y)) {
         qWarning() << "OSVR: Failed to present image on HMD";
     }
+
+    _presentRate.increment();
 };
 
 void OsvrDisplayPlugin::uncustomizeContext() {
