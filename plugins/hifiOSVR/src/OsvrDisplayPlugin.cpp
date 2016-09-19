@@ -214,7 +214,6 @@ void OsvrDisplayPlugin::customizeContext() {
     // Register render texture with OSVR library.
     _colorBuffer.OpenGL = new osvr::renderkit::RenderBufferOpenGL;
     _colorBuffer.OpenGL->colorBufferName = colorBufferName;
-    _colorBuffers.clear();
     _colorBuffers.push_back(_colorBuffer);
     _colorBuffers.push_back(_colorBuffer);  // Single buffer for both eyes.
     if (!_osvrRender->RegisterRenderBuffers(_colorBuffers)) {
@@ -289,9 +288,10 @@ void OsvrDisplayPlugin::hmdPresent() {
 
 void OsvrDisplayPlugin::uncustomizeContext() {
     // Revert OpenGL context to desktop's.
-    _colorBuffers.clear();
+    glDeleteTextures(1, &_colorBuffer.OpenGL->colorBufferName);
     delete _colorBuffer.OpenGL;
     _colorBuffer.OpenGL = nullptr;
+    _colorBuffers.clear();
 
     Parent::uncustomizeContext();
 }
