@@ -91,6 +91,8 @@ bool OsvrDisplayPlugin::internalActivate() {
     auto hmdInfo = parseHMDInfo(_osvrContext->getStringParameter("/display"));
     qDebug() << "OSVR: HMD =" << hmdInfo[HMD_VENDOR] << hmdInfo[HMD_MODEL] << hmdInfo[HMD_VERSION];
 
+    // FIXME: Interface crashes at the following line if start up in HMD mode; OSVR SDK 0.6.1337 build 329.
+    // Work-around implemented as FIXME in Application::loadSettings().
     osvr::renderkit::RenderManager::OpenResults result = _osvrRender->OpenDisplay();
     if (result.status == osvr::renderkit::RenderManager::OpenStatus::FAILURE) {
         qWarning() << "OSVR: Could not open display";
