@@ -150,15 +150,15 @@ bool OsvrDisplayPlugin::internalActivate() {
         return false;
     }
 
-    fixRenderInfo(renderInfo);  // TODO: Is this correct when using an OSVR HDK?
-
     _renderTargetSize = uvec2(
         renderInfo[0].viewport.width + renderInfo[1].viewport.width,
         std::max(renderInfo[0].viewport.height, renderInfo[1].viewport.height)
         );
 
+    flipProjection(renderInfo);
     _eyeProjections[0] = toGlm(renderInfo[0].projection);
     _eyeProjections[1] = toGlm(renderInfo[1].projection);
+
     _eyeOffsets[0] = glm::translate(mat4(), glm::vec3(-_ipd / 2.0f, 0.0f, 0.0f));
     _eyeOffsets[1] = glm::translate(mat4(), glm::vec3(_ipd / 2.0f, 0.0f, 0.0f));
 
@@ -233,8 +233,6 @@ bool OsvrDisplayPlugin::beginFrameRender(uint32_t frameIndex) {
         return false;
     }
 
-    fixRenderInfo(_renderInfo);  // TODO: Is this correct when using an OSVR HDK?
-
     _currentRenderFrameInfo = FrameInfo();
     glm::quat rotation = toGlm(_renderInfo[0].pose.rotation) * _sensorZeroRotation;  // Both eye views have the same rotation.
     glm::vec3 translation = rotation 
@@ -274,10 +272,9 @@ void OsvrDisplayPlugin::hmdPresent() {
         batch.blit(source, sourceRect, dest, destRect);
     });
 
-    const bool FLIP_IN_Y = true;
-
     _presentInfo = _renderInfo;
-
+    flipProjection(_presentInfo);
+    const bool FLIP_IN_Y = true;
     if (!_osvrRender->PresentRenderBuffers(_colorBuffers, _presentInfo, _renderParams, _textureViewports, FLIP_IN_Y)) {
         qWarning() << "OSVR: Failed to present image on HMD";
     }

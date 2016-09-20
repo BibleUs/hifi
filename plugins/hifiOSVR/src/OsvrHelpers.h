@@ -33,11 +33,10 @@ const QString HMD_VERSION = "Version";
 QMap<QString, QString> parseHMDInfo(const std::string& displayString);
 
 
-inline void fixRenderInfo(std::vector<osvr::renderkit::RenderInfo> &renderInfo) {
+inline void flipProjection(std::vector<osvr::renderkit::RenderInfo> &renderInfo) {
     // Swap projection's top and bottom values so that the top value is +ve and the bottom value is -ve.
     // Interface needs this in order to get the correct projection values (though this could be fixed in goGlm().
-    // OSVR RenderManager also needs this for a much smoother time-warp correction.
-    // TODO: This may be a RenderManager bug; keep an eye out for fixes.
+    // OSVR RenderManager also needs this to be done when flipping y in PresentRenderBuffers(), otherwise time-warp is jerky.
     std::swap(renderInfo[0].projection.top, renderInfo[0].projection.bottom);
     std::swap(renderInfo[1].projection.top, renderInfo[1].projection.bottom);
 }
