@@ -267,14 +267,11 @@ void OsvrDisplayPlugin::hmdPresent() {
     // FIXME per similar OculusDisplayPlugin FIXME.
     render([&](gpu::Batch& batch) {
         batch.enableStereo(false);
-        batch.setFramebuffer(_outputFramebuffer);
-        batch.setViewportTransform(ivec4(uvec2(), _outputFramebuffer->getSize()));
-        batch.setStateScissorRect(ivec4(uvec2(), _outputFramebuffer->getSize()));
-        batch.resetViewTransform();
-        batch.setProjectionTransform(mat4());
-        batch.setPipeline(_presentPipeline);
-        batch.setResourceTexture(0, _compositeFramebuffer->getRenderBuffer(0));
-        batch.draw(gpu::TRIANGLE_STRIP, 4);
+        auto source = _compositeFramebuffer;
+        auto sourceRect = ivec4(ivec2(0), source->getSize());
+        auto dest = _outputFramebuffer;
+        auto destRect = ivec4(ivec2(0), dest->getSize());
+        batch.blit(source, sourceRect, dest, destRect);
     });
 
     const bool FLIP_IN_Y = true;
