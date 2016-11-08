@@ -82,21 +82,29 @@ public:
 
     CheckDevicesThread(AudioClient* audioClient)
         : _audioClient(audioClient) {
+    }
 
-        connect(qApp, &QCoreApplication::aboutToQuit, [this] {
-            _quit = true;
-        });
+    void beforeAboutToQuit() {
+        Lock lock(_checkDevicesMutex);
+        _quit = true;
     }
 
     void run() override {
-        while (!_quit) {
+        while (true) {
+            {
+                Lock lock(_checkDevicesMutex);
+                if (_quit) {
+                    break;
+                }
+                _audioClient->checkDevices();
+            }
             QThread::msleep(DEVICE_CHECK_INTERVAL_MSECS);
-            _audioClient->checkDevices();
         }
     }
 
 private:
     AudioClient* _audioClient { nullptr };
+    Mutex _checkDevicesMutex;
     bool _quit { false };
 };
 
@@ -115,7 +123,7 @@ AudioClient::AudioClient() :
     _loopbackAudioOutput(NULL),
     _loopbackOutputDevice(NULL),
     _inputRingBuffer(0),
-    _receivedAudioStream(0, RECEIVED_AUDIO_STREAM_CAPACITY_FRAMES),
+    _receivedAudioStream(RECEIVED_AUDIO_STREAM_CAPACITY_FRAMES),
     _isStereoInput(false),
     _outputStarveDetectionStartTimeMsec(0),
     _outputStarveDetectionCount(0),
@@ -159,10 +167,10 @@ AudioClient::AudioClient() :
     _outputDevices = getDeviceNames(QAudio::AudioOutput);
 
     // start a thread to detect any device changes
-    QThread* checkDevicesThread = new CheckDevicesThread(this);
-    checkDevicesThread->setObjectName("CheckDevices Thread");
-    checkDevicesThread->setPriority(QThread::LowPriority);
-    checkDevicesThread->start();
+    _checkDevicesThread = new CheckDevicesThread(this);
+    _checkDevicesThread->setObjectName("CheckDevices Thread");
+    _checkDevicesThread->setPriority(QThread::LowPriority);
+    _checkDevicesThread->start();
 
     configureReverb();
 
@@ -177,12 +185,18 @@ AudioClient::AudioClient() :
 }
 
 AudioClient::~AudioClient() {
+    delete _checkDevicesThread;
     stop();
     if (_codec && _encoder) {
         _codec->releaseEncoder(_encoder);
         _encoder = nullptr;
     }
 }
+
+void AudioClient::beforeAboutToQuit() {
+    static_cast<CheckDevicesThread*>(_checkDevicesThread)->beforeAboutToQuit();
+}
+
 
 void AudioClient::handleMismatchAudioFormat(SharedNodePointer node, const QString& currentCodec, const QString& recievedCodec) {
     qCDebug(audioclient) << __FUNCTION__ << "sendingNode:" << *node << "currentCodec:" << currentCodec << "recievedCodec:" << recievedCodec;
@@ -817,6 +831,13 @@ void AudioClient::handleLocalEchoAndReverb(QByteArray& inputByteArray) {
         return;
     }
 
+    // NOTE: we assume the inputFormat and the outputFormat are the same, since on any modern
+    // multimedia OS they should be. If there is a device that this is not true for, we can
+    // add back support to do resampling.
+    if (_inputFormat.sampleRate() != _outputFormat.sampleRate()) {
+        return;
+    }
+
     // if this person wants local loopback add that to the locally injected audio
     // if there is reverb apply it to local audio and substract the origin samples
 
@@ -832,11 +853,6 @@ void AudioClient::handleLocalEchoAndReverb(QByteArray& inputByteArray) {
             return;
         }
     }
-
-    // NOTE: we assume the inputFormat and the outputFormat are the same, since on any modern
-    // multimedia OS they should be. If there is a device that this is not true for, we can
-    // add back support to do resampling.
-    Q_ASSERT(_inputFormat.sampleRate() == _outputFormat.sampleRate());
 
     static QByteArray loopBackByteArray;
 
@@ -864,6 +880,10 @@ void AudioClient::handleLocalEchoAndReverb(QByteArray& inputByteArray) {
 }
 
 void AudioClient::handleAudioInput() {
+
+    if (!_inputDevice) {
+        return;
+    }
 
     // input samples required to produce exactly NETWORK_FRAME_SAMPLES of output
     const int inputSamplesRequired = (_inputToNetworkResampler ? 
@@ -1150,9 +1170,9 @@ bool AudioClient::outputLocalInjector(bool isStereo, AudioInjector* injector) {
 }
 
 void AudioClient::outputFormatChanged() {
-    int outputFormatChannelCountTimesSampleRate = _outputFormat.channelCount() * _outputFormat.sampleRate();
-    _outputFrameSize = AudioConstants::NETWORK_FRAME_SAMPLES_PER_CHANNEL * outputFormatChannelCountTimesSampleRate / _desiredOutputFormat.sampleRate();
-    _receivedAudioStream.outputFormatChanged(outputFormatChannelCountTimesSampleRate);
+    _outputFrameSize = (AudioConstants::NETWORK_FRAME_SAMPLES_PER_CHANNEL * _outputFormat.channelCount() * _outputFormat.sampleRate()) /
+        _desiredOutputFormat.sampleRate();
+    _receivedAudioStream.outputFormatChanged(_outputFormat.sampleRate(), _outputFormat.channelCount());
 }
 
 bool AudioClient::switchInputToAudioDevice(const QAudioDeviceInfo& inputDeviceInfo) {
@@ -1362,7 +1382,7 @@ int AudioClient::setOutputBufferSize(int numFrames, bool persist) {
 // proportional to the accelerator ratio.
 
 #ifdef Q_OS_WIN
-const float AudioClient::CALLBACK_ACCELERATOR_RATIO = 1.0f;
+const float AudioClient::CALLBACK_ACCELERATOR_RATIO = IsWindows8OrGreater() ? 1.0f : 0.25f;
 #endif
 
 #ifdef Q_OS_MAC

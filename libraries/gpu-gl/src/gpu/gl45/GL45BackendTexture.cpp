@@ -148,6 +148,24 @@ uint32_t SparseInfo::getPageCount(const uvec3& dimensions) const {
     return pageCounts.x * pageCounts.y * pageCounts.z;
 }
 
+
+
+void GL45Backend::initTextureManagementStage() {
+
+    // enable the Sparse Texture on gl45
+    _textureManagement._sparseCapable = true;
+    _textureManagement._incrementalTransferCapable = true;
+
+    // But now let s refine the behavior based on vendor
+    std::string vendor { (const char*)glGetString(GL_VENDOR) };
+    if ((vendor.find("AMD") != std::string::npos) || (vendor.find("ATI") != std::string::npos) || (vendor.find("INTEL") != std::string::npos)) {
+        qCDebug(gpugllogging) << "GPU is sparse capable but force it off, vendor = " << vendor.c_str();
+        _textureManagement._sparseCapable = false;
+    } else {
+        qCDebug(gpugllogging) << "GPU is sparse capable, vendor = " << vendor.c_str();
+    }
+}
+
 using TransferState = GL45Backend::GL45Texture::TransferState;
 
 TransferState::TransferState(GL45Texture& texture) : texture(texture) {
@@ -243,17 +261,29 @@ GLuint GL45Backend::getTextureID(const TexturePointer& texture, bool transfer) {
     return GL45Texture::getId<GL45Texture>(*this, texture, transfer);
 }
 
+GL45Texture::GL45Texture(const std::weak_ptr<GLBackend>& backend, const Texture& texture, GLuint externalId)
+    : GLTexture(backend, texture, externalId), _sparseInfo(*this), _transferState(*this) {
+}
+
 GL45Texture::GL45Texture(const std::weak_ptr<GLBackend>& backend, const Texture& texture, bool transferrable)
     : GLTexture(backend, texture, allocate(texture), transferrable), _sparseInfo(*this), _transferState(*this) {
 
-    if (_transferrable && Texture::getEnableSparseTextures()) {
+    auto theBackend = _backend.lock();
+    if (_transferrable && theBackend && theBackend->isTextureManagementSparseEnabled()) {
         _sparseInfo.maybeMakeSparse();
+        if (_sparseInfo.sparse) {
+            Backend::incrementTextureGPUSparseCount();
+        }
     }
 }
 
 GL45Texture::~GL45Texture() {
-    qCDebug(gpugl45logging) << "Destroying texture " << _id << " from source " << _source.c_str();
+    // External textures cycle very quickly, so don't spam the log with messages about them.
+    if (!_gpuObject.getUsage().isExternal()) {
+        qCDebug(gpugl45logging) << "Destroying texture " << _id << " from source " << _source.c_str();
+    }
     if (_sparseInfo.sparse) {
+        Backend::decrementTextureGPUSparseCount();
         // Remove this texture from the candidate list of derezzable textures
         {
             auto mipLevels = usedMipLevels();
@@ -293,6 +323,7 @@ GL45Texture::~GL45Texture() {
         }
 
         auto size = _size;
+        const_cast<GLuint&>(_size) = 0;
         _textureTransferHelper->queueExecution([id, size, destructionFunctions] {
             for (auto function : destructionFunctions) {
                 function();
@@ -300,6 +331,7 @@ GL45Texture::~GL45Texture() {
             glDeleteTextures(1, &id);
             Backend::decrementTextureGPUCount();
             Backend::updateTextureGPUMemoryUsage(size, 0);
+            Backend::updateTextureGPUSparseMemoryUsage(size, 0);
         });
     }
 }
@@ -309,7 +341,9 @@ void GL45Texture::withPreservedTexture(std::function<void()> f) const {
 }
 
 void GL45Texture::generateMips() const {
-    qCDebug(gpugl45logging) << "Generating mipmaps for " << _source.c_str();
+    if (_transferrable) {
+        qCDebug(gpugl45logging) << "Generating mipmaps for " << _source.c_str();
+    }
     glGenerateTextureMipmap(_id);
     (void)CHECK_GL_ERROR();
 }
@@ -331,7 +365,9 @@ void GL45Texture::updateSize() const {
         qFatal("Compressed textures not yet supported");
     }
 
-    if (_transferrable) {
+    if (_transferrable && _sparseInfo.sparse) {
+        auto size = _allocatedPages * _sparseInfo.pageBytes;
+        Backend::updateTextureGPUSparseMemoryUsage(_size, size);
         setSize(_allocatedPages * _sparseInfo.pageBytes);
     } else {
         setSize(_virtualSize);
@@ -345,7 +381,8 @@ void GL45Texture::startTransfer() {
 }
 
 bool GL45Texture::continueTransfer() {
-    if (!Texture::getEnableIncrementalTextureTransfers()) {
+    auto backend = _backend.lock();
+    if (!backend || !backend->isTextureManagementIncrementalTransferEnabled()) {
         size_t maxFace = GL_TEXTURE_CUBE_MAP == _target ? CUBE_NUM_FACES : 1;
         for (uint8_t face = 0; face < maxFace; ++face) {
             for (uint16_t mipLevel = _minMip; mipLevel <= _maxMip; ++mipLevel) {
@@ -511,9 +548,7 @@ void GL45Texture::stripToMip(uint16_t newMinMip) {
     _minMip = newMinMip;
     // Re-sync the sampler to force access to the new mip level
     syncSampler();
-    size_t oldSize = _size;
     updateSize();
-    Q_ASSERT(_size > oldSize);
 
 
     // Re-insert into the texture-by-mips map if appropriate

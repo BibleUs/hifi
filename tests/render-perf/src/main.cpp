@@ -18,9 +18,11 @@
 #include <QtCore/QElapsedTimer>
 #include <QtCore/QLoggingCategory>
 #include <QtCore/QRegularExpression>
+#include <QtCore/QSettings>
 #include <QtCore/QTimer>
 #include <QtCore/QThread>
 #include <QtCore/QThreadPool>
+
 
 #include <QtGui/QGuiApplication>
 #include <QtGui/QResizeEvent>
@@ -64,7 +66,6 @@
 #include <SceneScriptingInterface.h>
 
 #include "Camera.hpp"
-#include "TextOverlay.hpp"
 
 
 static const QString LAST_SCENE_KEY = "lastSceneFile";
@@ -424,6 +425,7 @@ protected:
         return vec3();
     }
 
+    bool isAboutToQuit() const override { return false; }
     void postLambdaEvent(std::function<void()> f) override {}
 
     qreal getDevicePixelRatio() override {
@@ -640,7 +642,7 @@ private:
         _renderCount = _renderThread._presentCount.load();
         update();
 
-        RenderArgs renderArgs(_renderThread._gpuContext, _octree.data(), DEFAULT_OCTREE_SIZE_SCALE,
+        RenderArgs renderArgs(_renderThread._gpuContext, _octree, DEFAULT_OCTREE_SIZE_SCALE,
             0, RenderArgs::DEFAULT_RENDER_MODE,
             RenderArgs::MONO, RenderArgs::RENDER_DEBUG_NONE);
 
@@ -1051,19 +1053,6 @@ private:
             return true;
         }
     } };
-
-    struct TextElement {
-        const glm::vec2 position;
-        const std::string text;
-        TextOverlay::TextAlign alignment;
-    };
-
-    enum TextBlock {
-        Help,
-        Info,
-    };
-
-    std::map<TextBlock, std::list<TextElement>> _textBlocks;
 
     render::EnginePointer _renderEngine { new render::Engine() };
     render::ScenePointer _main3DScene { new render::Scene(glm::vec3(-0.5f * (float)TREE_SCALE), (float)TREE_SCALE) };

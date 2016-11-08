@@ -130,8 +130,6 @@ public:
     // TODO: As long as we have gl calls explicitely issued from interface
     // code, we need to be able to record and batch these calls. THe long 
     // term strategy is to get rid of any GL calls in favor of the HIFI GPU API
-    virtual void do_glActiveBindTexture(const Batch& batch, size_t paramOffset) final;
-
     virtual void do_glUniform1i(const Batch& batch, size_t paramOffset) final;
     virtual void do_glUniform1f(const Batch& batch, size_t paramOffset) final;
     virtual void do_glUniform2f(const Batch& batch, size_t paramOffset) final;
@@ -170,12 +168,16 @@ public:
     virtual bool isTextureReady(const TexturePointer& texture);
 
     virtual void releaseBuffer(GLuint id, Size size) const;
+    virtual void releaseExternalTexture(GLuint id, const Texture::ExternalRecycler& recycler) const;
     virtual void releaseTexture(GLuint id, Size size) const;
     virtual void releaseFramebuffer(GLuint id) const;
     virtual void releaseShader(GLuint id) const;
     virtual void releaseProgram(GLuint id) const;
     virtual void releaseQuery(GLuint id) const;
     virtual void queueLambda(const std::function<void()> lambda) const;
+
+    bool isTextureManagementSparseEnabled() const override { return (_textureManagement._sparseCapable && Texture::getEnableSparseTextures()); }
+    bool isTextureManagementIncrementalTransferEnabled() const override { return (_textureManagement._incrementalTransferCapable && Texture::getEnableIncrementalTextureTransfers()); }
 
 protected:
 
@@ -194,6 +196,7 @@ protected:
     mutable Mutex _trashMutex;
     mutable std::list<std::pair<GLuint, Size>> _buffersTrash;
     mutable std::list<std::pair<GLuint, Size>> _texturesTrash;
+    mutable std::list<std::pair<GLuint, Texture::ExternalRecycler>> _externalTexturesTrash;
     mutable std::list<GLuint> _framebuffersTrash;
     mutable std::list<GLuint> _shadersTrash;
     mutable std::list<GLuint> _programsTrash;
@@ -363,6 +366,12 @@ protected:
     };
 
     void resetStages();
+
+    struct TextureManagementStageState {
+        bool _sparseCapable { false };
+        bool _incrementalTransferCapable { false };
+    } _textureManagement;
+    virtual void initTextureManagementStage() {}
 
     typedef void (GLBackend::*CommandCall)(const Batch&, size_t);
     static CommandCall _commandCalls[Batch::NUM_COMMANDS];

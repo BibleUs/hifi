@@ -166,7 +166,7 @@ Menu::Menu() {
     // Avatar menu ----------------------------------
     MenuWrapper* avatarMenu = addMenu("Avatar");
     auto avatarManager = DependencyManager::get<AvatarManager>();
-    QObject* avatar = avatarManager->getMyAvatar();
+    auto avatar = avatarManager->getMyAvatar();
 
     // Avatar > Attachments...
     auto action = addActionToQMenuAndActionHash(avatarMenu, MenuOption::Attachments);
@@ -182,19 +182,19 @@ Menu::Menu() {
     addActionToQMenuAndActionHash(avatarSizeMenu,
         MenuOption::IncreaseAvatarSize,
         0, // QML Qt::Key_Plus,
-        avatar, SLOT(increaseSize()));
+        avatar.get(), SLOT(increaseSize()));
 
     // Avatar > Size > Decrease
     addActionToQMenuAndActionHash(avatarSizeMenu,
         MenuOption::DecreaseAvatarSize,
         0, // QML Qt::Key_Minus,
-        avatar, SLOT(decreaseSize()));
+        avatar.get(), SLOT(decreaseSize()));
 
     // Avatar > Size > Reset
     addActionToQMenuAndActionHash(avatarSizeMenu,
         MenuOption::ResetAvatarSize,
         0, // QML Qt::Key_Equal,
-        avatar, SLOT(resetSize()));
+        avatar.get(), SLOT(resetSize()));
 
     // Avatar > Reset Sensors
     addActionToQMenuAndActionHash(avatarMenu,
@@ -337,6 +337,9 @@ Menu::Menu() {
 
     // Developer > Render > Throttle FPS If Not Focus
     addCheckableActionToQMenuAndActionHash(renderOptionsMenu, MenuOption::ThrottleFPSIfNotFocus, 0, true);
+
+    // Developer > Render > OpenVR threaded submit
+    addCheckableActionToQMenuAndActionHash(renderOptionsMenu, MenuOption::OpenVrThreadedSubmit, 0, true);
 
     // Developer > Render > Resolution
     MenuWrapper* resolutionMenu = renderOptionsMenu->addMenu(MenuOption::RenderResolution);
@@ -517,38 +520,38 @@ Menu::Menu() {
     addCheckableActionToQMenuAndActionHash(avatarDebugMenu, MenuOption::RenderOtherLookAtVectors, 0, false);
     addCheckableActionToQMenuAndActionHash(avatarDebugMenu, MenuOption::FixGaze, 0, false);
     addCheckableActionToQMenuAndActionHash(avatarDebugMenu, MenuOption::AnimDebugDrawDefaultPose, 0, false,
-        avatar, SLOT(setEnableDebugDrawDefaultPose(bool)));
+        avatar.get(), SLOT(setEnableDebugDrawDefaultPose(bool)));
     addCheckableActionToQMenuAndActionHash(avatarDebugMenu, MenuOption::AnimDebugDrawAnimPose, 0, false,
-        avatar, SLOT(setEnableDebugDrawAnimPose(bool)));
+        avatar.get(), SLOT(setEnableDebugDrawAnimPose(bool)));
     addCheckableActionToQMenuAndActionHash(avatarDebugMenu, MenuOption::AnimDebugDrawPosition, 0, false,
-        avatar, SLOT(setEnableDebugDrawPosition(bool)));
+        avatar.get(), SLOT(setEnableDebugDrawPosition(bool)));
     addCheckableActionToQMenuAndActionHash(avatarDebugMenu, MenuOption::MeshVisible, 0, true,
-        avatar, SLOT(setEnableMeshVisible(bool)));
+        avatar.get(), SLOT(setEnableMeshVisible(bool)));
     addCheckableActionToQMenuAndActionHash(avatarDebugMenu, MenuOption::DisableEyelidAdjustment, 0, false);
     addCheckableActionToQMenuAndActionHash(avatarDebugMenu, MenuOption::TurnWithHead, 0, false);
     addCheckableActionToQMenuAndActionHash(avatarDebugMenu, MenuOption::UseAnimPreAndPostRotations, 0, true,
-        avatar, SLOT(setUseAnimPreAndPostRotations(bool)));
+        avatar.get(), SLOT(setUseAnimPreAndPostRotations(bool)));
     addCheckableActionToQMenuAndActionHash(avatarDebugMenu, MenuOption::EnableInverseKinematics, 0, true,
-        avatar, SLOT(setEnableInverseKinematics(bool)));
+        avatar.get(), SLOT(setEnableInverseKinematics(bool)));
     addCheckableActionToQMenuAndActionHash(avatarDebugMenu, MenuOption::RenderSensorToWorldMatrix, 0, false,
-        avatar, SLOT(setEnableDebugDrawSensorToWorldMatrix(bool)));
+        avatar.get(), SLOT(setEnableDebugDrawSensorToWorldMatrix(bool)));
 
     addCheckableActionToQMenuAndActionHash(avatarDebugMenu, MenuOption::ActionMotorControl,
-        Qt::CTRL | Qt::SHIFT | Qt::Key_K, true, avatar, SLOT(updateMotionBehaviorFromMenu()),
+        Qt::CTRL | Qt::SHIFT | Qt::Key_K, true, avatar.get(), SLOT(updateMotionBehaviorFromMenu()),
         UNSPECIFIED_POSITION, "Developer");
 
     addCheckableActionToQMenuAndActionHash(avatarDebugMenu, MenuOption::ScriptedMotorControl, 0, true,
-        avatar, SLOT(updateMotionBehaviorFromMenu()),
+        avatar.get(), SLOT(updateMotionBehaviorFromMenu()),
         UNSPECIFIED_POSITION, "Developer");
 
     addCheckableActionToQMenuAndActionHash(avatarDebugMenu, MenuOption::EnableCharacterController, 0, true,
-        avatar, SLOT(updateMotionBehaviorFromMenu()),
+        avatar.get(), SLOT(updateMotionBehaviorFromMenu()),
         UNSPECIFIED_POSITION, "Developer");
 
     // Developer > Hands >>>
     MenuWrapper* handOptionsMenu = developerMenu->addMenu("Hands");
     addCheckableActionToQMenuAndActionHash(handOptionsMenu, MenuOption::DisplayHandTargets, 0, false,
-        avatar, SLOT(setEnableDebugDrawHandControllers(bool)));
+        avatar.get(), SLOT(setEnableDebugDrawHandControllers(bool)));
     addCheckableActionToQMenuAndActionHash(handOptionsMenu, MenuOption::LowVelocityFilter, 0, true,
         qApp, SLOT(setLowVelocityFilter(bool)));
 
@@ -605,6 +608,7 @@ Menu::Menu() {
     addCheckableActionToQMenuAndActionHash(perfTimerMenu, MenuOption::ExpandMyAvatarSimulateTiming, 0, false);
     addCheckableActionToQMenuAndActionHash(perfTimerMenu, MenuOption::ExpandOtherAvatarTiming, 0, false);
     addCheckableActionToQMenuAndActionHash(perfTimerMenu, MenuOption::ExpandPaintGLTiming, 0, false);
+    addCheckableActionToQMenuAndActionHash(perfTimerMenu, MenuOption::ExpandPhysicsSimulationTiming, 0, false);
 
     addCheckableActionToQMenuAndActionHash(timingMenu, MenuOption::FrameTimer);
     addActionToQMenuAndActionHash(timingMenu, MenuOption::RunTimingTests, 0, qApp, SLOT(runTests()));
@@ -615,6 +619,14 @@ Menu::Menu() {
 
     // Developer > Audio >>>
     MenuWrapper* audioDebugMenu = developerMenu->addMenu("Audio");
+
+    action = addActionToQMenuAndActionHash(audioDebugMenu, "Stats...");
+    connect(action, &QAction::triggered, [] {
+        auto scriptEngines = DependencyManager::get<ScriptEngines>();
+        QUrl defaultScriptsLoc = defaultScriptsLocation();
+        defaultScriptsLoc.setPath(defaultScriptsLoc.path() + "developer/utilities/audio/stats.js");
+        scriptEngines->loadScript(defaultScriptsLoc.toString());
+    });
 
     action = addActionToQMenuAndActionHash(audioDebugMenu, "Buffers...");
     connect(action, &QAction::triggered, [] {
@@ -653,10 +665,6 @@ Menu::Menu() {
         audioScopeFramesGroup->addAction(twentyFrames);
         audioScopeFramesGroup->addAction(fiftyFrames);
     }
-
-    // Developer > Audio > Audio Network Stats...
-    addActionToQMenuAndActionHash(audioDebugMenu, MenuOption::AudioNetworkStats, 0,
-        dialogsManager.data(), SLOT(audioStatsDetails()));
 
     // Developer > Physics >>>
     MenuWrapper* physicsOptionsMenu = developerMenu->addMenu("Physics");

@@ -72,8 +72,6 @@ public slots:
     void processICEServerHeartbeatACK(QSharedPointer<ReceivedMessage> message);
 
 private slots:
-    void aboutToQuit();
-
     void setupPendingAssignmentCredits();
     void sendPendingTransactionsToServer();
 
@@ -96,6 +94,7 @@ private slots:
     void handleICEHostInfo(const QHostInfo& hostInfo);
 
     void sendICEServerAddressToMetaverseAPI();
+    void handleSuccessfulICEServerAddressUpdate(QNetworkReply& requestReply);
     void handleFailedICEServerAddressUpdate(QNetworkReply& requestReply);
 
 signals:
@@ -149,12 +148,8 @@ private:
 
     bool isAuthenticatedRequest(HTTPConnection* connection, const QUrl& url);
 
-    void handleTokenRequestFinished();
     QNetworkReply* profileRequestGivenTokenReply(QNetworkReply* tokenReply);
-    void handleProfileRequestFinished();
     Headers setupCookieHeadersFromProfileReply(QNetworkReply* profileReply);
-
-    void loadExistingSessionsFromSettings();
 
     QJsonObject jsonForSocket(const HifiSockAddr& socket);
     QJsonObject jsonObjectForNode(const SharedNodePointer& node);
@@ -211,6 +206,9 @@ private:
     int _iceServerPort;
     bool _overrideDomainID { false }; // should we override the domain-id from settings?
     QUuid _overridingDomainID { QUuid() }; // what should we override it with?
+
+    bool _sendICEServerAddressToMetaverseAPIInProgress { false };
+    bool _sendICEServerAddressToMetaverseAPIRedo { false };
 };
 
 
