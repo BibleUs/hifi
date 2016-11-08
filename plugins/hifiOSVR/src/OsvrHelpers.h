@@ -16,8 +16,6 @@
 #include <osvr/ClientKit/Display.h>
 #include <osvr/RenderKit/RenderManager.h>
 
-#include <gl/OglplusHelpers.h>
-
 #include <GLMHelpers.h>
 
 
@@ -42,7 +40,7 @@ inline void flipProjection(std::vector<osvr::renderkit::RenderInfo> &renderInfo)
 }
 
 inline glm::mat4 toGlm(const osvr::renderkit::OSVR_ProjectionMatrix &projection) {
-    GLdouble proj[16];
+    double proj[16];
     OSVR_Projection_to_OpenGL(proj, projection);
     return glm::mat4(
         proj[0], proj[1], proj[2], proj[3],

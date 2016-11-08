@@ -14,7 +14,6 @@
 #include "OsvrDisplayPlugin.h"
 
 #include <display-plugins/CompositorHelper.h>
-#include <gl/OglplusHelpers.h>
 #include <gpu/gl/GLBackend.h>
 
 #include <ViewFrustum.h>
@@ -210,7 +209,7 @@ void OsvrDisplayPlugin::customizeContext() {
     glBindTexture(GL_TEXTURE_2D, 0);
 
     _outputFramebuffer =  gpu::FramebufferPointer(
-        gpu::Framebuffer::create(gpu::Element::COLOR_RGBA_32, _renderTargetSize.x, _renderTargetSize.y));
+        gpu::Framebuffer::create("osvrOutput", gpu::Element::COLOR_RGBA_32, _renderTargetSize.x, _renderTargetSize.y));
     auto fbo = getGLBackend()->getFramebufferID(_outputFramebuffer);
     glNamedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, colorBufferName, 0); 
 
