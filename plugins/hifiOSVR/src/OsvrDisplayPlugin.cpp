@@ -117,8 +117,7 @@ bool OsvrDisplayPlugin::internalActivate() {
     // Get HMD's target frame rate.
     osvr::renderkit::RenderTimingInfo timingInfo;
     if (_osvrRender->GetTimingInfo(0, timingInfo)) {
-        const float MICROSECONDS_PER_SECOND = 1000000.0f;
-        _targetFrameRate = roundf(MICROSECONDS_PER_SECOND / (float)timingInfo.hardwareDisplayInterval.microseconds);
+        _targetFrameRate = roundf((float)USECS_PER_SECOND / (float)timingInfo.hardwareDisplayInterval.microseconds);
         qDebug() << "OSVR: HMD frame rate =" << _targetFrameRate;
     } else {
         const float DEFAULT_TARGET_FRAME_RATE = 60.0f;
@@ -288,6 +287,7 @@ void OsvrDisplayPlugin::uncustomizeContext() {
     delete _colorBuffer.OpenGL;
     _colorBuffer.OpenGL = nullptr;
     _colorBuffers.clear();
+    _outputFramebuffer.reset();
 
     Parent::uncustomizeContext();
 }
