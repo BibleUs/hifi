@@ -17,6 +17,7 @@
 #include <osvr/RenderKit/RenderManager.h>
 
 #include <GLMHelpers.h>
+#include <glm/gtc/type_ptr.hpp>
 
 
 bool isOsvrAvailable();
@@ -42,11 +43,7 @@ inline void flipProjection(std::vector<osvr::renderkit::RenderInfo> &renderInfo)
 inline glm::mat4 toGlm(const osvr::renderkit::OSVR_ProjectionMatrix &projection) {
     double proj[16];
     OSVR_Projection_to_OpenGL(proj, projection);
-    return glm::mat4(
-        proj[0], proj[1], proj[2], proj[3],
-        proj[4], proj[5], proj[6], proj[7],
-        proj[8], proj[9], proj[10], proj[11],
-        proj[12], proj[13], proj[14], proj[15]);
+    return glm::make_mat4(proj);
 }
 
 inline glm::quat toGlm(const OSVR_Quaternion &quat) {
