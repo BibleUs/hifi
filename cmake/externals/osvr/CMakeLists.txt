@@ -8,8 +8,8 @@ string(TOUPPER ${EXTERNAL_NAME} EXTERNAL_NAME_UPPER)
 if (WIN32)
   ExternalProject_Add(
     ${EXTERNAL_NAME}
-    URL http://public.highfidelity.com/dependencies/osvr_sdk_win_0_6_1337_329.zip
-    URL_MD5 ec035f605f714f229cff6721df7d5254
+    URL http://public.highfidelity.com/dependencies/osvr_sdk_win_0_6_1341_337.zip
+    URL_MD5 c943c40a4eaae3e351a71a8de95d2bde
     CONFIGURE_COMMAND ""
     BUILD_COMMAND ""
     INSTALL_COMMAND ""
