@@ -3814,6 +3814,10 @@ void Application::loadSettings() {
     // DONT CHECK IN
     //DependencyManager::get<LODManager>()->setAutomaticLODAdjust(false);
 
+    // FIXME: Interface crashes if start up in HMD mode with OSVR HMD; OSVR SDK 0.6.1337 build 329.
+    Settings settings;
+    settings.remove("Display/OSVR HMD");
+
     Menu::getInstance()->loadSettings();
     // If there is a preferred plugin, we probably messed it up with the menu settings, so fix it.
     auto pluginManager = PluginManager::getInstance();

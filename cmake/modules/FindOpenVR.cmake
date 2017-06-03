@@ -1,13 +1,13 @@
 # 
-#  FindLibOVR.cmake
+#  FindOpenOVR.cmake
 # 
-#  Try to find the LibOVR library to use the Oculus
+#  Try to find the OpenVR library to use the Vive
 
 #  Once done this will define
 #
-#  OPENVR_FOUND - system found LibOVR
-#  OPENVR_INCLUDE_DIRS - the LibOVR include directory
-#  OPENVR_LIBRARIES - Link this to use LibOVR
+#  OPENVR_FOUND - system found OpenVR
+#  OPENVR_INCLUDE_DIRS - the OpenVR include directory
+#  OPENVR_LIBRARIES - Link this to use OpenVR
 #
 #  Distributed under the Apache License, Version 2.0.
 #  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
