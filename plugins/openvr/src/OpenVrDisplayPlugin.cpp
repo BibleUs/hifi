@@ -46,7 +46,6 @@ PoseData _nextSimPoseData;
 #define MIN_CORES_FOR_NORMAL_RENDER 5
 bool forceInterleavedReprojection = (QThread::idealThreadCount() < MIN_CORES_FOR_NORMAL_RENDER);
 
-static std::array<vr::Hmd_Eye, 2> VR_EYES { { vr::Eye_Left, vr::Eye_Right } };
 bool _openVrDisplayActive { false };
 // Flip y-axis since GL UV coords are backwards.
 static vr::VRTextureBounds_t OPENVR_TEXTURE_BOUNDS_LEFT{ 0, 0, 0.5f, 1 };
@@ -434,7 +433,11 @@ bool OpenVrDisplayPlugin::internalActivate() {
     auto usingOpenVRForOculus = oculusViaOpenVR();
     _asyncReprojectionActive = (timing.m_nReprojectionFlags & VRCompositor_ReprojectionAsync) || usingOpenVRForOculus;
 
+#if defined(Q_OS_WIN32)
     _threadedSubmit = !_asyncReprojectionActive;
+#else
+    _threadedSubmit = false;
+#endif
     if (usingOpenVRForOculus) {
         qDebug() << "Oculus active via OpenVR:  " << usingOpenVRForOculus;
     }
@@ -514,7 +517,7 @@ void OpenVrDisplayPlugin::customizeContext() {
     static std::once_flag once;
     std::call_once(once, [] {
         glewExperimental = true;
-        GLenum err = glewInit();
+        glewInit(); // error value unused
         glGetError(); // clear the potential error from glewExperimental
     });
 
@@ -741,6 +744,7 @@ int OpenVrDisplayPlugin::getRequiredThreadCount() const {
 }
 
 QString OpenVrDisplayPlugin::getPreferredAudioInDevice() const {
+#if defined(Q_OS_WIN32)
     QString device = getVrSettingString(vr::k_pch_audio_Section, vr::k_pch_audio_OnPlaybackDevice_String);
     if (!device.isEmpty()) {
         static const WCHAR INIT = 0;
@@ -751,9 +755,13 @@ QString OpenVrDisplayPlugin::getPreferredAudioInDevice() const {
         device = AudioClient::getWinDeviceName(deviceW.data());
     }
     return device;
+#else
+    return QString();
+#endif
 }
 
 QString OpenVrDisplayPlugin::getPreferredAudioOutDevice() const {
+#if defined(Q_OS_WIN32)
     QString device = getVrSettingString(vr::k_pch_audio_Section, vr::k_pch_audio_OnRecordDevice_String);
     if (!device.isEmpty()) {
         static const WCHAR INIT = 0;
@@ -764,5 +772,8 @@ QString OpenVrDisplayPlugin::getPreferredAudioOutDevice() const {
         device = AudioClient::getWinDeviceName(deviceW.data());
     }
     return device;
+#else
+    return QString();
+#endif
 }
 
