@@ -32,7 +32,7 @@
 #include <plugins/DisplayPlugin.h>
 
 #include <controllers/UserInputMapper.h>
-#include <Plugins/InputConfiguration.h>
+#include <plugins/InputConfiguration.h>
 #include <controllers/StandardControls.h>
 
 extern PoseData _nextSimPoseData;
@@ -41,10 +41,8 @@ vr::IVRSystem* acquireOpenVrSystem();
 void releaseOpenVrSystem();
 
 static const QString OPENVR_LAYOUT = QString("OpenVrConfiguration.qml");
-static const char* CONTROLLER_MODEL_STRING = "vr_controller_05_wireless_b";
 const quint64 CALIBRATION_TIMELAPSE = 1 * USECS_PER_SECOND;
 
-static const char* MENU_PARENT = "Avatar";
 static const char* MENU_NAME = "Vive Controllers";
 static const char* MENU_PATH = "Avatar" ">" "Vive Controllers";
 static const char* RENDER_CONTROLLERS = "Render Hand Controllers";
@@ -347,7 +345,7 @@ void ViveControllerManager::InputDevice::update(float deltaTime, const controlle
     handleHandController(deltaTime, rightHandDeviceIndex, inputCalibrationData, false);
 
     // collect poses for all generic trackers
-    for (int i = 0; i < vr::k_unMaxTrackedDeviceCount; i++) {
+    for (uint32_t i = 0; i < vr::k_unMaxTrackedDeviceCount; i++) {
         handleTrackedObject(i, inputCalibrationData);
         handleHmd(i, inputCalibrationData);
     }
@@ -406,8 +404,8 @@ void ViveControllerManager::InputDevice::calibrateFromUI(const controller::Input
     }
 }
 
-static const float CM_TO_M = 0.01f;
-static const float M_TO_CM = 100.0f;
+static const double CM_TO_M = 0.01f;
+static const double M_TO_CM = 100.0f;
 
 void ViveControllerManager::InputDevice::configureCalibrationSettings(const QJsonObject configurationSettings) {
     Locker locker(_lock);
@@ -438,9 +436,9 @@ void ViveControllerManager::InputDevice::configureCalibrationSettings(const QJso
                     _handConfig = HandConfig::HandController;
                 }
             } else if (iter.key() == "armCircumference") {
-                _armCircumference = (float)iter.value().toDouble() * CM_TO_M;
+                _armCircumference = (float)(iter.value().toDouble() * CM_TO_M);
             } else if (iter.key() == "shoulderWidth") {
-                _shoulderWidth = (float)iter.value().toDouble() * CM_TO_M;
+                _shoulderWidth = (float)(iter.value().toDouble() * CM_TO_M);
             }
             iter++;
         }
@@ -485,7 +483,7 @@ void ViveControllerManager::InputDevice::handleTrackedObject(uint32_t deviceInde
         _nextSimPoseData.vrPoses[deviceIndex].bPoseIsValid &&
         poseIndex <= controller::TRACKED_OBJECT_15) {
 
-        mat4& mat = mat4();
+        mat4 mat = mat4();
         vec3 linearVelocity = vec3();
         vec3 angularVelocity = vec3();
         // check if the device is tracking out of range, then process the correct pose depending on the result.
@@ -630,8 +628,6 @@ bool ViveControllerManager::InputDevice::configureHead(const glm::mat4& defaultT
 bool ViveControllerManager::InputDevice::configureBody(const glm::mat4& defaultToReferenceMat, const controller::InputCalibrationData& inputCalibration) {
     std::sort(_validTrackedObjects.begin(), _validTrackedObjects.end(), sortPucksYPosition);
     int puckCount = (int)_validTrackedObjects.size();
-    glm::vec3 headXAxis = getReferenceHeadXAxis(defaultToReferenceMat, inputCalibration.defaultHeadMat);
-    glm::vec3 headPosition = getReferenceHeadPosition(defaultToReferenceMat, inputCalibration.defaultHeadMat);
     if (_config == Config::None) {
         return true;
     } else if (_config == Config::Feet && puckCount >= MIN_PUCK_COUNT) {
@@ -729,7 +725,6 @@ controller::Pose ViveControllerManager::InputDevice::addOffsetToPuckPose(const c
 }
 
 void ViveControllerManager::InputDevice::handleHmd(uint32_t deviceIndex, const controller::InputCalibrationData& inputCalibrationData) {
-     uint32_t poseIndex = controller::TRACKED_OBJECT_00 + deviceIndex;
 
      if (_system->IsTrackedDeviceConnected(deviceIndex) &&
          _system->GetTrackedDeviceClass(deviceIndex) == vr::TrackedDeviceClass_HMD &&
@@ -899,11 +894,11 @@ void ViveControllerManager::InputDevice::printDeviceTrackingResultChange(uint32_
 }
 
 bool ViveControllerManager::InputDevice::checkForCalibrationEvent() {
-    auto& endOfMap = _buttonPressedMap.end();
-    auto& leftTrigger = _buttonPressedMap.find(controller::LT);
-    auto& rightTrigger = _buttonPressedMap.find(controller::RT);
-    auto& leftAppButton = _buttonPressedMap.find(LEFT_APP_MENU);
-    auto& rightAppButton = _buttonPressedMap.find(RIGHT_APP_MENU);
+    auto endOfMap = _buttonPressedMap.end();
+    auto leftTrigger = _buttonPressedMap.find(controller::LT);
+    auto rightTrigger = _buttonPressedMap.find(controller::RT);
+    auto leftAppButton = _buttonPressedMap.find(LEFT_APP_MENU);
+    auto rightAppButton = _buttonPressedMap.find(RIGHT_APP_MENU);
     return ((leftTrigger != endOfMap && leftAppButton != endOfMap) && (rightTrigger != endOfMap && rightAppButton != endOfMap));
 }
 
@@ -1007,7 +1002,6 @@ void ViveControllerManager::InputDevice::hapticsHelper(float deltaTime, bool lef
 void ViveControllerManager::InputDevice::calibrateLeftHand(const glm::mat4& defaultToReferenceMat, const controller::InputCalibrationData& inputCalibration, PuckPosePair& handPair) {
     controller::Pose& handPose = handPair.second;
     glm::mat4 handPoseAvatarMat = createMatFromQuatAndPos(handPose.getRotation(), handPose.getTranslation());
-    glm::vec3 handPoseTranslation = extractTranslation(handPoseAvatarMat);
     glm::vec3 handPoseZAxis = glmExtractRotation(handPoseAvatarMat) * glm::vec3(0.0f, 0.0f, 1.0f);
     glm::vec3 avatarHandYAxis = transformVectorFast(inputCalibration.defaultLeftHand, glm::vec3(0.0f, 1.0f, 0.0f));
     const float EPSILON = 1.0e-4f;
@@ -1038,7 +1032,6 @@ void ViveControllerManager::InputDevice::calibrateLeftHand(const glm::mat4& defa
 void ViveControllerManager::InputDevice::calibrateRightHand(const glm::mat4& defaultToReferenceMat, const controller::InputCalibrationData& inputCalibration, PuckPosePair& handPair) {
     controller::Pose& handPose = handPair.second;
     glm::mat4 handPoseAvatarMat = createMatFromQuatAndPos(handPose.getRotation(), handPose.getTranslation());
-    glm::vec3 handPoseTranslation = extractTranslation(handPoseAvatarMat);
     glm::vec3 handPoseZAxis = glmExtractRotation(handPoseAvatarMat) * glm::vec3(0.0f, 0.0f, 1.0f);
     glm::vec3 avatarHandYAxis = transformVectorFast(inputCalibration.defaultRightHand, glm::vec3(0.0f, 1.0f, 0.0f));
     const float EPSILON = 1.0e-4f;
