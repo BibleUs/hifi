@@ -41,7 +41,7 @@ const QSurfaceFormat& getDefaultOpenGLSurfaceFormat() {
         format.setDepthBufferSize(DEFAULT_GL_DEPTH_BUFFER_BITS);
         format.setStencilBufferSize(DEFAULT_GL_STENCIL_BUFFER_BITS);
         setGLFormatVersion(format);
-        QSurfaceFormat::setDefaultFormat(format);
+        //QSurfaceFormat::setDefaultFormat(format);
     });
     return format;
 }
