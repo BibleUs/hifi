@@ -176,11 +176,15 @@ if (WIN32)
   # binary directories get added to the fixup path
   add_dependency_external_projects(sixense)
   add_dependency_external_projects(sdl2)
-  add_dependency_external_projects(OpenVR)
   add_dependency_external_projects(neuron)
+  add_dependency_external_projects(OpenVR)
   add_dependency_external_projects(wasapi)
   add_dependency_external_projects(steamworks)
 endif()
+
+if (UNIX AND NOT ANDROID AND NOT APPLE)
+  add_dependency_external_projects(OpenVR)
+endif ()
 
 # include OPENSSL
 include_directories(SYSTEM "${OPENSSL_INCLUDE_DIR}")
