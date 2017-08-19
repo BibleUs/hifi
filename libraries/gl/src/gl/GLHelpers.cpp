@@ -109,6 +109,7 @@ const QSurfaceFormat& getDefaultOpenGLSurfaceFormat() {
         ::gl::getTargetVersion(major, minor);
         format.setMajorVersion(major);
         format.setMinorVersion(minor);
+        //QSurfaceFormat::setDefaultFormat(format);
     });
     return format;
 }
