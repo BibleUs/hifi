@@ -158,7 +158,6 @@ void GLBackend::init() {
         qCDebug(gpugllogging) << "\tdriver:" << gpu->getDriver();
         qCDebug(gpugllogging) << "\tdedicated memory:" << gpu->getMemory() << "MB";
 
-        glewExperimental = true;
         GLenum err = glewInit();
         glGetError(); // clear the potential error from glewExperimental
         if (GLEW_OK != err) {
