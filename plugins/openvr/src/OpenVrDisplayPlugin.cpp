@@ -433,7 +433,11 @@ bool OpenVrDisplayPlugin::internalActivate() {
     auto usingOpenVRForOculus = oculusViaOpenVR();
     _asyncReprojectionActive = (timing.m_nReprojectionFlags & VRCompositor_ReprojectionAsync) || usingOpenVRForOculus;
 
+#if defined(Q_OS_WIN32)
     _threadedSubmit = !_asyncReprojectionActive;
+#else
+    _threadedSubmit = false;
+#endif
     if (usingOpenVRForOculus) {
         qDebug() << "Oculus active via OpenVR:  " << usingOpenVRForOculus;
     }
@@ -726,6 +730,7 @@ int OpenVrDisplayPlugin::getRequiredThreadCount() const {
 }
 
 QString OpenVrDisplayPlugin::getPreferredAudioInDevice() const {
+#if defined(Q_OS_WIN32)
     QString device = getVrSettingString(vr::k_pch_audio_Section, vr::k_pch_audio_OnPlaybackDevice_String);
     if (!device.isEmpty()) {
         static const WCHAR INIT = 0;
@@ -736,9 +741,13 @@ QString OpenVrDisplayPlugin::getPreferredAudioInDevice() const {
         device = AudioClient::getWinDeviceName(deviceW.data());
     }
     return device;
+#else
+    return QString();
+#endif
 }
 
 QString OpenVrDisplayPlugin::getPreferredAudioOutDevice() const {
+#if defined(Q_OS_WIN32)
     QString device = getVrSettingString(vr::k_pch_audio_Section, vr::k_pch_audio_OnRecordDevice_String);
     if (!device.isEmpty()) {
         static const WCHAR INIT = 0;
@@ -749,6 +758,9 @@ QString OpenVrDisplayPlugin::getPreferredAudioOutDevice() const {
         device = AudioClient::getWinDeviceName(deviceW.data());
     }
     return device;
+#else
+    return QString();
+#endif
 }
 
 QRectF OpenVrDisplayPlugin::getPlayAreaRect() {
