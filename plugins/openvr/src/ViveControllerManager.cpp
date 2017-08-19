@@ -32,7 +32,7 @@
 #include <plugins/DisplayPlugin.h>
 
 #include <controllers/UserInputMapper.h>
-#include <Plugins/InputConfiguration.h>
+#include <plugins/InputConfiguration.h>
 #include <controllers/StandardControls.h>
 
 extern PoseData _nextSimPoseData;
@@ -485,7 +485,7 @@ void ViveControllerManager::InputDevice::handleTrackedObject(uint32_t deviceInde
         _nextSimPoseData.vrPoses[deviceIndex].bPoseIsValid &&
         poseIndex <= controller::TRACKED_OBJECT_15) {
 
-        mat4& mat = mat4();
+        mat4 mat = mat4();
         vec3 linearVelocity = vec3();
         vec3 angularVelocity = vec3();
         // check if the device is tracking out of range, then process the correct pose depending on the result.
@@ -886,11 +886,11 @@ void ViveControllerManager::InputDevice::printDeviceTrackingResultChange(uint32_
 }
 
 bool ViveControllerManager::InputDevice::checkForCalibrationEvent() {
-    auto& endOfMap = _buttonPressedMap.end();
-    auto& leftTrigger = _buttonPressedMap.find(controller::LT);
-    auto& rightTrigger = _buttonPressedMap.find(controller::RT);
-    auto& leftAppButton = _buttonPressedMap.find(LEFT_APP_MENU);
-    auto& rightAppButton = _buttonPressedMap.find(RIGHT_APP_MENU);
+    auto endOfMap = _buttonPressedMap.end();
+    auto leftTrigger = _buttonPressedMap.find(controller::LT);
+    auto rightTrigger = _buttonPressedMap.find(controller::RT);
+    auto leftAppButton = _buttonPressedMap.find(LEFT_APP_MENU);
+    auto rightAppButton = _buttonPressedMap.find(RIGHT_APP_MENU);
     return ((leftTrigger != endOfMap && leftAppButton != endOfMap) && (rightTrigger != endOfMap && rightAppButton != endOfMap));
 }
 
