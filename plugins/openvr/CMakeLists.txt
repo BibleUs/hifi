@@ -6,12 +6,10 @@
 #  See the accompanying file LICENSE or http:#www.apache.org/licenses/LICENSE-2.0.html
 #
 
-if (WIN32)
-    # we're using static GLEW, so define GLEW_STATIC
-    add_definitions(-DGLEW_STATIC)
+if (WIN32 OR (UNIX AND NOT ANDROID AND NOT APPLE))
     set(TARGET_NAME openvr)
     setup_hifi_plugin(OpenGL Script Qml Widgets Multimedia)
-    link_hifi_libraries(shared gl networking controllers ui 
+    link_hifi_libraries(shared gl networking controllers ui
         plugins display-plugins ui-plugins input-plugins script-engine
         audio-client render-utils graphics gpu gpu-gl render model-networking fbx ktx image procedural)
 
@@ -22,5 +20,10 @@ if (WIN32)
     find_package(OpenVR REQUIRED)
     target_include_directories(${TARGET_NAME} PRIVATE ${OPENVR_INCLUDE_DIRS})
     target_link_libraries(${TARGET_NAME} ${OPENVR_LIBRARIES})
-    target_link_libraries(${TARGET_NAME} Winmm.lib)
+
+    if (WIN32)
+        # we're using static GLEW, so define GLEW_STATIC
+        add_definitions(-DGLEW_STATIC)
+        target_link_libraries(${TARGET_NAME} Winmm.lib)
+    endif()
 endif()
