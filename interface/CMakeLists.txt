@@ -177,11 +177,12 @@ if (WIN32)
   # binary directories get added to the fixup path
   add_dependency_external_projects(sixense)
   add_dependency_external_projects(sdl2)
-  add_dependency_external_projects(OpenVR)
   add_dependency_external_projects(neuron)
   add_dependency_external_projects(wasapi)
   add_dependency_external_projects(steamworks)
 endif()
+
+add_dependency_external_projects(OpenVR)
 
 # disable /OPT:REF and /OPT:ICF for the Debug builds
 # This will prevent the following linker warnings
