@@ -267,24 +267,12 @@ Size GL45Texture::copyMipFaceLinesFromTexture(uint16_t mip, uint8_t face, const 
             case GL_COMPRESSED_SIGNED_R11_EAC:
             case GL_COMPRESSED_RG11_EAC:
             case GL_COMPRESSED_SIGNED_RG11_EAC:
-                if (glCompressedTextureSubImage2DEXT) {
-                    auto target = GLTexture::CUBE_FACE_LAYOUT[face];
-                    glCompressedTextureSubImage2DEXT(_id, target, mip, 0, yOffset, size.x, size.y, internalFormat,
-                                                     static_cast<GLsizei>(sourceSize), sourcePointer);
-                } else {
-                    glCompressedTextureSubImage3D(_id, mip, 0, yOffset, face, size.x, size.y, 1, internalFormat,
-                                                  static_cast<GLsizei>(sourceSize), sourcePointer);
-                }
+                glCompressedTextureSubImage3D(_id, mip, 0, yOffset, face, size.x, size.y, 1, internalFormat,
+                                                    static_cast<GLsizei>(sourceSize), sourcePointer);
+
                 break;
             default:
-                // DSA ARB does not work on AMD, so use EXT
-                // unless EXT is not available on the driver
-                if (glTextureSubImage2DEXT) {
-                    auto target = GLTexture::CUBE_FACE_LAYOUT[face];
-                    glTextureSubImage2DEXT(_id, target, mip, 0, yOffset, size.x, size.y, format, type, sourcePointer);
-                } else {
-                    glTextureSubImage3D(_id, mip, 0, yOffset, face, size.x, size.y, 1, format, type, sourcePointer);
-                }
+                glTextureSubImage3D(_id, mip, 0, yOffset, face, size.x, size.y, 1, format, type, sourcePointer);
                 break;
         }
     } else {
