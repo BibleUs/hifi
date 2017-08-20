@@ -46,6 +46,9 @@ void PluginContainer::removeMenu(const QString& menuName) {
 QAction* PluginContainer::addMenuItem(PluginType type, const QString& path, const QString& name, std::function<void(bool)> onClicked, bool checkable, bool checked, const QString& groupName) {
     auto menu = getPrimaryMenu();
     MenuWrapper* parentItem = menu->getMenu(path);
+    if (!parentItem) {
+        return nullptr;
+    }
     QAction* action = menu->addActionToQMenuAndActionHash(parentItem, name);
     if (!groupName.isEmpty()) {
         QActionGroup* group { nullptr };
