@@ -72,6 +72,9 @@ struct MenuCache {
         }
         flushCache(menu);
         MenuWrapper* parentItem = menu->getMenu(path);
+    if (!parentItem) {
+        return;
+    }
         QAction* action = menu->addActionToQMenuAndActionHash(parentItem, name);
         if (!groupName.isEmpty()) {
             QActionGroup* group{ nullptr };
