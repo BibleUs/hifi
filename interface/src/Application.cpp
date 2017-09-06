@@ -2062,6 +2062,10 @@ Application::~Application() {
 void Application::initializeGL() {
     qCDebug(interfaceapp) << "Created Display Window.";
 
+    // since Qt 4.8 makeCurrent() only works if you are in the "right" thread
+    // unless the old behavior is enabled like this
+    QCoreApplication::setAttribute(Qt::AA_DontCheckOpenGLContextThreadAffinity);
+
     // initialize glut for shape drawing; Qt apparently initializes it on OS X
     if (_isGLInitialized) {
         return;
