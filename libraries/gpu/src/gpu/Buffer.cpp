@@ -99,8 +99,11 @@ Buffer::Update::Update(const Buffer& parent) : buffer(parent) {
 void Buffer::Update::apply() const {
     // Make sure we're loaded in order
     buffer._applyUpdateCount++;
-    assert(buffer._applyUpdateCount == updateNumber);
-
+    if (!buffer._applyUpdateCount == updateNumber) {
+        // this can happen while switching between OpenVR and flat display
+        qWarning() << "Buffer apply: Out of order, bailing!";
+        return;
+    }
     const auto pageSize = buffer._pages._pageSize;
     buffer._renderSysmem.resize(size);
     buffer._renderPages.accommodate(size);
