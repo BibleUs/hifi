@@ -436,7 +436,7 @@ bool OpenVrDisplayPlugin::internalActivate() {
 #if defined(Q_OS_WIN32)
     _threadedSubmit = !_asyncReprojectionActive;
 #else
-    _threadedSubmit = false;
+    _threadedSubmit = true;
 #endif
     if (usingOpenVRForOculus) {
         qDebug() << "Oculus active via OpenVR:  " << usingOpenVRForOculus;
