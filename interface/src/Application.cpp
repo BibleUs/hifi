@@ -2722,7 +2722,6 @@ void Application::initializeGL() {
 #ifdef DISABLE_QML
     setAttribute(Qt::AA_DontCheckOpenGLContextThreadAffinity);
 #endif
-
     // initialize glut for shape drawing; Qt apparently initializes it on OS X
     if (_isGLInitialized) {
         return;
