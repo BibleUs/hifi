@@ -6,9 +6,7 @@
 #  See the accompanying file LICENSE or http:#www.apache.org/licenses/LICENSE-2.0.html
 #
 
-if ((WIN32 OR (UNIX AND NOT ANDROID AND NOT APPLE)) AND (NOT USE_GLES))
-    # we're using static GLEW, so define GLEW_STATIC
-    add_definitions(-DGLEW_STATIC)
+if (NOT ANDROID)
     set(TARGET_NAME openvr)
     setup_hifi_plugin(OpenGL Script Qml Widgets Multimedia)
     link_hifi_libraries(shared gl networking controllers ui
