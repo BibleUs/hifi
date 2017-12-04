@@ -194,7 +194,7 @@ if (WIN32)
   add_dependency_external_projects(steamworks)
 endif()
 
-if (UNIX AND NOT ANDROID AND NOT APPLE)
+if (NOT ANDROID)
   add_dependency_external_projects(OpenVR)
 endif ()
 
