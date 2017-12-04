@@ -36,7 +36,7 @@ if (WIN32)
 elseif(APPLE)
 
   # FIXME need to account for different architectures 
-  set(${EXTERNAL_NAME_UPPER}_LIBRARIES ${SOURCE_DIR}/lib/osx32/libopenvr_api.dylib CACHE TYPE INTERNAL)
+  set(${EXTERNAL_NAME_UPPER}_LIBRARIES ${SOURCE_DIR}/bin/osx32/libopenvr_api.dylib CACHE TYPE INTERNAL)
   add_paths_to_fixup_libs(${SOURCE_DIR}/bin/osx32)
 
 elseif(NOT ANDROID)
