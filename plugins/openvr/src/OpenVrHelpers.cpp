@@ -44,7 +44,7 @@ bool openVrQuitRequested() {
     return _openVrQuitRequested;
 }
 
-static const uint32_t RELEASE_OPENVR_HMD_DELAY_MS = 5000;
+//static const uint32_t RELEASE_OPENVR_HMD_DELAY_MS = 5000;
 
 bool isOculusPresent() {
     bool result = false;
@@ -160,7 +160,7 @@ static Qt::InputMethodHints _currentHints;
 extern PoseData _nextSimPoseData;
 static bool _keyboardShown { false };
 static bool _overlayRevealed { false };
-static const uint32_t SHOW_KEYBOARD_DELAY_MS = 400;
+//static const uint32_t SHOW_KEYBOARD_DELAY_MS = 400;
 
 void updateFromOpenVrKeyboardInput() {
     auto chars = _overlay->GetKeyboardText(textArray, 8192);
