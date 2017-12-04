@@ -839,8 +839,8 @@ void ViveControllerManager::InputDevice::partitionTouchpad(int sButton, int xAxi
     const float CENTER_DEADBAND = 0.6f;
     const float DIAGONAL_DIVIDE_IN_RADIANS = PI / 4.0f;
     if (_buttonPressedMap.find(sButton) != _buttonPressedMap.end()) {
-        float absX = abs(_axisStateMap[xAxis]);
-        float absY = abs(_axisStateMap[yAxis]);
+        float absX = fabs(_axisStateMap[xAxis]);
+        float absY = fabs(_axisStateMap[yAxis]);
         glm::vec2 cartesianQuadrantI(absX, absY);
         float angle = glm::atan(cartesianQuadrantI.y / cartesianQuadrantI.x);
         float radius = glm::length(cartesianQuadrantI);
