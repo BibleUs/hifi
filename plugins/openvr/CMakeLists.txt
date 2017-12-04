@@ -6,7 +6,7 @@
 #  See the accompanying file LICENSE or http:#www.apache.org/licenses/LICENSE-2.0.html
 #
 
-if (WIN32 OR (UNIX AND NOT ANDROID AND NOT APPLE))
+if (NOT ANDROID)
     set(TARGET_NAME openvr)
     setup_hifi_plugin(OpenGL Script Qml Widgets Multimedia)
     link_hifi_libraries(shared gl networking controllers ui
