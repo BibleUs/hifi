@@ -31,5 +31,5 @@ elseif (WIN32)
   set(LIB_EXT "lib")
 endif ()
 
-set(${EXTERNAL_NAME_UPPER}_LIBRARY_DEBUG ${INSTALL_DIR}/lib/${LIB_PREFIX}GLEW_d.${LIB_EXT} CACHE FILEPATH "Path to glew debug library")
+set(${EXTERNAL_NAME_UPPER}_LIBRARY_DEBUG ${INSTALL_DIR}/lib/${LIB_PREFIX}GLEWd.${LIB_EXT} CACHE FILEPATH "Path to glew debug library")
 set(${EXTERNAL_NAME_UPPER}_LIBRARY_RELEASE ${INSTALL_DIR}/lib/${LIB_PREFIX}GLEW.${LIB_EXT} CACHE FILEPATH "Path to glew release library")
