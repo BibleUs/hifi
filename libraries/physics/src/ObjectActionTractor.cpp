@@ -370,7 +370,11 @@ void ObjectActionTractor::deserialize(QByteArray serializedArguments) {
 
     EntityDynamicType type;
     dataStream >> type;
-    assert(type == getType());
+    //assert(type == getType());
+    if (type != getType()) {
+        qWarning() << "DESERIALIZE ERROR: " << type << " != " << getType();
+        return;
+    }
 
     QUuid id;
     dataStream >> id;
