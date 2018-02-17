@@ -263,16 +263,28 @@ Size GL45Texture::copyMipFaceLinesFromTexture(uint16_t mip, uint8_t face, const 
             case GL_COMPRESSED_SIGNED_R11_EAC:
             case GL_COMPRESSED_RG11_EAC:
             case GL_COMPRESSED_SIGNED_RG11_EAC:
+            {
                 auto glContextData = getGLContextData();
                 if (glContextData.value("vendor").toString() == "ATI Technologies Inc.") {
                     qCDebug(gpugllogging) << "Detected AMD windows driver, using workaround for nonfunctional ARB DSA";
-                glCompressedTextureSubImage3D(_id, mip, 0, yOffset, face, size.x, size.y, 1, internalFormat,
+                    auto target = GLTexture::CUBE_FACE_LAYOUT[face];
+                    glCompressedTextureSubImage2DEXT(_id, target, mip, 0, yOffset, size.x, size.y, internalFormat,
+                                                     static_cast<GLsizei>(sourceSize), sourcePointer);
+                } else {
+                    glCompressedTextureSubImage3D(_id, mip, 0, yOffset, face, size.x, size.y, 1, internalFormat,
                                                     static_cast<GLsizei>(sourceSize), sourcePointer);
-
+                }
             } break;
             default:
+            {
+                auto glContextData = getGLContextData();
+                if (glContextData.value("vendor").toString() == "ATI Technologies Inc.") {
                     qCDebug(gpugllogging) << "Detected AMD windows driver, using workaround for nonfunctional ARB DSA";
-                glTextureSubImage3D(_id, mip, 0, yOffset, face, size.x, size.y, 1, format, type, sourcePointer);
+                    auto target = GLTexture::CUBE_FACE_LAYOUT[face];
+                    glTextureSubImage2DEXT(_id, target, mip, 0, yOffset, size.x, size.y, format, type, sourcePointer);
+                } else {
+                    glTextureSubImage3D(_id, mip, 0, yOffset, face, size.x, size.y, 1, format, type, sourcePointer);
+                }
             } break;
         }
     } else {
