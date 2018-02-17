@@ -21,6 +21,7 @@
 
 #include <NumericalConstants.h>
 #include "../gl/GLTexelFormat.h"
+#include "../../../../gl/src/gl/GLHelpers.h"
 
 using namespace gpu;
 using namespace gpu::gl;
@@ -160,13 +161,29 @@ Size GL45Texture::copyMipFaceLinesFromTexture(uint16_t mip, uint8_t face, const 
             case GL_COMPRESSED_RG_RGTC2:
             case GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM:
             case GL_COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT:
-                glCompressedTextureSubImage3D(_id, mip, 0, yOffset, face, size.x, size.y, 1, internalFormat,
+            {
+                auto glContextData = getGLContextData();
+                if (glContextData.value("vendor").toString() == "ATI Technologies Inc.") {
+                    qCDebug(gpugllogging) << "Detected AMD windows driver, using workaround for nonfunctional ARB DSA";
+                    auto target = GLTexture::CUBE_FACE_LAYOUT[face];
+                    glCompressedTextureSubImage2DEXT(_id, target, mip, 0, yOffset, size.x, size.y, internalFormat,
+                                                     static_cast<GLsizei>(sourceSize), sourcePointer);
+                } else {
+                    glCompressedTextureSubImage3D(_id, mip, 0, yOffset, face, size.x, size.y, 1, internalFormat,
                                                     static_cast<GLsizei>(sourceSize), sourcePointer);
-
-                break;
+                }
+            } break;
             default:
-                glTextureSubImage3D(_id, mip, 0, yOffset, face, size.x, size.y, 1, format, type, sourcePointer);
-                break;
+            {
+                auto glContextData = getGLContextData();
+                if (glContextData.value("vendor").toString() == "ATI Technologies Inc.") {
+                    qCDebug(gpugllogging) << "Detected AMD windows driver, using workaround for nonfunctional ARB DSA";
+                    auto target = GLTexture::CUBE_FACE_LAYOUT[face];
+                    glTextureSubImage2DEXT(_id, target, mip, 0, yOffset, size.x, size.y, format, type, sourcePointer);
+                } else {
+                    glTextureSubImage3D(_id, mip, 0, yOffset, face, size.x, size.y, 1, format, type, sourcePointer);
+                }
+            } break;
         }
     } else {
         assert(false);
