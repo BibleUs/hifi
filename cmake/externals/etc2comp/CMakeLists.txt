@@ -8,6 +8,10 @@ if (APPLE)
   set(EXTRA_CMAKE_FLAGS -DCMAKE_CXX_FLAGS=-stdlib=libc++ -DCMAKE_EXE_LINKER_FLAGS=-stdlib=libc++)
 endif ()
 
+if (UNIX)
+  set(EXTRA_CMAKE_FLAGS -DCMAKE_CXX_FLAGS=-fPIC)
+endif ()
+
 include(ExternalProject)
 # We use a patched version of etc2comp that properly generates all the necessary mips
 # See https://github.com/google/etc2comp/pull/29
