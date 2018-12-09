@@ -191,14 +191,9 @@ if (WIN32)
   endif ()
 
   add_dependency_external_projects(neuron)
-  add_dependency_external_projects(OpenVR)
   add_dependency_external_projects(wasapi)
   add_dependency_external_projects(steamworks)
 endif()
-
-if (NOT ANDROID)
-  add_dependency_external_projects(OpenVR)
-endif ()
 
 # disable /OPT:REF and /OPT:ICF for the Debug builds
 # This will prevent the following linker warnings
