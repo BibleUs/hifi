@@ -1,3 +1,28 @@
+Linux VR fork: Build on Linux
+=========
+
+* `QT_CMAKE_PREFIX_PATH` needs to be set, even for qt cmake files in the cmake standard location /usr/lib/cmake.
+* -DRELEASE_TYPE=PRODUCTION changes some strings and produces a "Production" build as opposed to a developmen t build, whatever that means.
+
+Example cmake line:
+
+    QT_CMAKE_PREFIX_PATH=/usr/lib/cmake cmake -DRELEASE_TYPE=PRODUCTION -DCMAKE_BUILD_TYPE=Release ../hifi
+
+This builds a lot of dependencies and takes a long time.
+
+I only run `interface`, so other components may not even build.
+
+Build and run interface:
+
+    make -j$(nproc) interface
+    ./interface/interface
+
+
+Known Linux Issues:
+
+* Crashes when dismissing the Login Dialog, either logging in or skipping it. After successful login, it should work on the next start.
+
+
 High Fidelity (hifi) is an early-stage technology lab experimenting with Virtual Worlds and VR. 
 
 This repository contains the source to many of the components in our 
