@@ -20,8 +20,8 @@ Build and run interface:
 
 Known Linux Issues:
 
-* Crashes when dismissing the Login Dialog, either logging in or skipping it. After successful login, it should work on the next start.
-
+* Advanced VR controller setting missing/not working
+* Scrambled menu when not maximized?
 
 High Fidelity (hifi) is an early-stage technology lab experimenting with Virtual Worlds and VR. 
 
